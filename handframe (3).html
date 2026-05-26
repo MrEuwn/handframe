@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INFORMATICS Handframe</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --black:   #0D0D0D;
+  --white:   #FAFAF5;
+  --yellow:  #FFE500;
+  --red:     #FF3B30;
+  --green:   #00C853;
+  --blue:    #0062FF;
+  --gray:    #E8E8E0;
+  --shadow:  4px 4px 0 var(--black);
+  --shadow-lg: 6px 6px 0 var(--black);
+  --border:  3px solid var(--black);
+}
+
+html, body {
+  height: 100%;
+  background: var(--white);
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  color: var(--black);
+  overflow: hidden;
+}
+
+video { display: none; }
+
+/* ── Layout ─────────────────────────────────────── */
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100vh;
+  max-height: 100vh;
+}
+
+/* ── Header ─────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 52px;
+  background: var(--yellow);
+  border-bottom: var(--border);
+  flex-shrink: 0;
+}
+
+.header-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+.header-logo span { color: var(--black); opacity: 0.35; font-size: 14px; vertical-align: middle; margin-left: 6px; font-family: 'Space Grotesk', sans-serif; font-weight: 500; letter-spacing: 0.15em; }
+
+.header-right { display: flex; align-items: center; gap: 10px; }
+
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border: 2px solid var(--black);
+  box-shadow: 2px 2px 0 var(--black);
+  background: var(--white);
+}
+.badge.live { background: var(--green); color: var(--white); }
+.badge.live::before { content: '● '; }
+
+/* ── Main layout ─────────────────────────────────── */
+main {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  overflow: hidden;
+}
+
+/* ── Camera section ─────────────────────────────── */
+.cam-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: #1A1A1A;
+  border-right: var(--border);
+  position: relative;
+}
+
+.cam-wrapper {
+  position: relative;
+  border: var(--border);
+  box-shadow: var(--shadow-lg);
+  background: #000;
+  overflow: hidden;
+  width: 100%;
+  max-width: 700px;
+  aspect-ratio: 16 / 9;
+}
+
+#canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Timer overlay */
+#timer-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+#timer-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(80px, 20vw, 180px);
+  color: #fff;
+  line-height: 1;
+  opacity: 0;
+  transform: scale(1.4);
+  transition: opacity 0.15s, transform 0.15s;
+  text-shadow: 4px 4px 0 var(--yellow), 8px 8px 0 rgba(0,0,0,0.3);
+  letter-spacing: -0.02em;
+}
+#timer-num.show { opacity: 1; transform: scale(1); }
+
+/* Loading overlay */
+#loading {
+  position: absolute;
+  inset: 0;
+  background: #0D0D0D;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 20;
+}
+.spinner {
+  width: 28px; height: 28px;
+  border: 3px solid rgba(255,229,0,0.2);
+  border-top-color: var(--yellow);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading-msg {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,229,0,0.7);
+}
+
+/* Hint hands on camera */
+#hint {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 32px;
+  opacity: 0;
+  transition: opacity 0.5s;
+  pointer-events: none;
+}
+#hint.show { opacity: 1; }
+.hint-hand {
+  font-size: 40px;
+  animation: bob 1.8s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+}
+.hint-hand:last-child { animation-delay: 0.4s; }
+@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+/* ── Side panel ──────────────────────────────────── */
+.panel {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--white);
+  padding: 14px;
+  gap: 12px;
+}
+
+/* Panel card */
+.pcard {
+  border: var(--border);
+  box-shadow: var(--shadow);
+  background: var(--white);
+  padding: 12px;
+}
+.pcard-title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--black);
+  opacity: 0.45;
+  margin-bottom: 10px;
+}
+
+/* Pinch indicators */
+.pinch-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.pinch-card {
+  border: 2px solid var(--black);
+  padding: 10px 8px;
+  text-align: center;
+  background: var(--gray);
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+.pinch-card.active {
+  background: var(--green);
+  box-shadow: 3px 3px 0 var(--black);
+  transform: translate(-1px, -1px);
+}
+.pinch-card.active .pinch-icon { filter: none; }
+.pinch-icon {
+  font-size: 28px;
+  display: block;
+  margin-bottom: 4px;
+  filter: grayscale(1) opacity(0.4);
+  transition: filter 0.15s;
+}
+.pinch-card.active .pinch-icon { filter: none; }
+.pinch-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* Frame size bar */
+.size-bar-wrap {
+  margin-top: 6px;
+  border: 2px solid var(--black);
+  height: 18px;
+  background: var(--gray);
+  position: relative;
+  overflow: hidden;
+}
+.size-bar-fill {
+  height: 100%;
+  background: var(--yellow);
+  border-right: 2px solid var(--black);
+  transition: width 0.1s;
+  width: 38%;
+}
+.size-val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  mix-blend-mode: multiply;
+}
+
+/* Mode display */
+.mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid var(--black);
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--gray);
+  box-shadow: 2px 2px 0 var(--black);
+  width: 100%;
+}
+.mode-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--gray);
+  border: 2px solid var(--black);
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.mode-pill.idle .mode-dot    { background: var(--gray); }
+.mode-pill.framing .mode-dot { background: var(--blue); }
+.mode-pill.countdown .mode-dot { background: var(--red); animation: pulse-dot 0.5s ease infinite alternate; }
+.mode-pill.captured .mode-dot { background: var(--green); }
+@keyframes pulse-dot { to { transform: scale(1.5); } }
+#mode-text { flex: 1; }
+
+/* Step instructions */
+.step-list { display: flex; flex-direction: column; gap: 7px; }
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+.step.active { opacity: 1; }
+.step-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  line-height: 1;
+  background: var(--black);
+  color: var(--yellow);
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.step.active .step-num { background: var(--yellow); color: var(--black); }
+
+/* ── Status bar ──────────────────────────────────── */
+footer {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  border-top: var(--border);
+  background: var(--yellow);
+  gap: 12px;
+  flex-shrink: 0;
+}
+#status-msg {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+/* ── Result screen ───────────────────────────────── */
+#result-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--white);
+  display: none;
+  z-index: 30;
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.result-inner {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  height: 100%;
+}
+
+.result-photo-area {
+  background: #111;
+  border-right: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+}
+
+#result-img {
+  max-width: 100%;
+  max-height: 100%;
+  border: var(--border);
+  box-shadow: var(--shadow-lg);
+  object-fit: contain;
+}
+
+.result-panel {
+  padding: 24px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.result-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.result-sub {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  opacity: 0.45;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.result-meta {
+  border: var(--border);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  background: var(--gray);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.meta-row { display: flex; justify-content: space-between; }
+.meta-row span:first-child { opacity: 0.45; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
+
+.btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+
+.nbtn {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 14px 20px;
+  border: var(--border);
+  cursor: pointer;
+  background: var(--white);
+  box-shadow: var(--shadow);
+  transition: transform 0.08s, box-shadow 0.08s;
+  text-align: center;
+}
+.nbtn:hover  { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--black); }
+.nbtn:active { transform: translate(2px,2px);   box-shadow: 2px 2px 0 var(--black); }
+.nbtn.primary { background: var(--yellow); }
+.nbtn.danger  { background: var(--red); color: var(--white); }
+</style>
+</head>
+<body>
+
+<video id="video" playsinline autoplay muted></video>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-logo">INFORMATICS <span style="opacity:1;font-size:26px;font-family:'Bebas Neue',sans-serif;letter-spacing:0.06em;">Handframe</span></div>
+    <div class="header-right">
+      <div class="badge live" id="live-badge">LIVE</div>
+      <div class="badge" id="mp-badge">MEDIAPIPE</div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- Camera -->
+    <div class="cam-section">
+      <div class="cam-wrapper">
+        <canvas id="canvas"></canvas>
+
+        <!-- Timer overlay -->
+        <div id="timer-overlay">
+          <div id="timer-num">3</div>
+        </div>
+
+        <!-- Idle hint -->
+        <div id="hint">
+          <div class="hint-hand">🤏</div>
+          <div class="hint-hand">🤏</div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading">
+          <div class="spinner"></div>
+          <div id="loading-msg">Memuat model hands…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel -->
+    <aside class="panel">
+
+      <!-- Mode -->
+      <div class="pcard">
+        <div class="pcard-title">Status Mode</div>
+        <div class="mode-pill idle" id="mode-pill">
+          <div class="mode-dot"></div>
+          <div id="mode-text">IDLE</div>
+        </div>
+      </div>
+
+      <!-- Pinch detect -->
+      <div class="pcard">
+        <div class="pcard-title">Deteksi Pinch</div>
+        <div class="pinch-row">
+          <div class="pinch-card" id="card-left">
+            <span class="pinch-icon">🤏</span>
+            <div class="pinch-label">Kiri</div>
+          </div>
+          <div class="pinch-card" id="card-right">
+            <span class="pinch-icon">🤏</span>
+            <div class="pinch-label">Kanan</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Frame size -->
+      <div class="pcard">
+        <div class="pcard-title">Ukuran Bingkai</div>
+        <div class="size-bar-wrap">
+          <div class="size-bar-fill" id="size-bar"></div>
+          <div class="size-val" id="size-val">38%</div>
+        </div>
+      </div>
+
+      <!-- Steps -->
+      <div class="pcard">
+        <div class="pcard-title">Cara Pakai</div>
+        <div class="step-list">
+          <div class="step active" id="step1">
+            <div class="step-num">1</div>
+            <div>Pinch kedua tangan (jepit ibu jari + telunjuk)</div>
+          </div>
+          <div class="step" id="step2">
+            <div class="step-num">2</div>
+            <div>Rentang / rapatkan tangan untuk ubah ukuran</div>
+          </div>
+          <div class="step" id="step3">
+            <div class="step-num">3</div>
+            <div>Lepas pinch → timer 3 detik → foto otomatis!</div>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div id="status-msg">Izinkan akses kamera untuk mulai</div>
+  </footer>
+
+</div>
+
+<!-- RESULT SCREEN -->
+<div id="result-screen">
+  <div class="result-inner">
+    <div class="result-photo-area">
+      <img id="result-img" alt="Foto hasil" />
+    </div>
+    <div class="result-panel">
+      <div>
+        <div class="result-title">FOTO<br>BERHASIL!</div>
+        <div class="result-sub">Pinch Camera · HandFrame</div>
+      </div>
+      <div class="result-meta">
+        <div class="meta-row"><span>Waktu</span><span id="meta-time">—</span></div>
+        <div class="meta-row"><span>Ukuran</span><span id="meta-size">—</span></div>
+      </div>
+      <div class="btn-group">
+        <button class="nbtn primary" onclick="downloadPhoto()">⬇ Simpan Foto</button>
+        <button class="nbtn" onclick="retake()">↩ Foto Lagi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script>
+/* ── Elements ── */
+const video       = document.getElementById('video');
+const canvas      = document.getElementById('canvas');
+const ctx         = canvas.getContext('2d');
+const timerNum    = document.getElementById('timer-num');
+const loadingEl   = document.getElementById('loading');
+const loadingMsg  = document.getElementById('loading-msg');
+const hintEl      = document.getElementById('hint');
+const statusMsg   = document.getElementById('status-msg');
+const resultScreen= document.getElementById('result-screen');
+const resultImg   = document.getElementById('result-img');
+const modePill    = document.getElementById('mode-pill');
+const modeText    = document.getElementById('mode-text');
+const cardLeft    = document.getElementById('card-left');
+const cardRight   = document.getElementById('card-right');
+const sizeBar     = document.getElementById('size-bar');
+const sizeVal     = document.getElementById('size-val');
+const step1       = document.getElementById('step1');
+const step2       = document.getElementById('step2');
+const step3       = document.getElementById('step3');
+const metaTime    = document.getElementById('meta-time');
+const metaSize    = document.getElementById('meta-size');
+
+/* ── State ── */
+let state      = 'loading';
+let frame      = { x: 0.5, y: 0.5, size: 0.38 };
+let initDist   = null;
+let initSize   = 0.38;
+let cdVal      = 3;
+let cdInterval = null;
+let photoDataUrl = null;
+let idleCount  = 0;
+
+const PINCH_THRESH = 0.072; // normalized units
+
+/* ── Canvas resize ── */
+function resize() {
+  const wrap = canvas.parentElement;
+  canvas.width  = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* ── Helpers ── */
+function dist2D(a, b) {
+  const dx = a.x - b.x, dy = a.y - b.y;
+  return Math.sqrt(dx*dx + dy*dy);
+}
+function isPinching(lms) {
+  return dist2D(lms[4], lms[8]) < PINCH_THRESH;
+}
+function pinchCenter(lms) {
+  return { x: (lms[4].x + lms[8].x) / 2, y: (lms[4].y + lms[8].y) / 2 };
+}
+
+/* ── UI update ── */
+function setMode(m, label) {
+  modePill.className = 'mode-pill ' + m;
+  modeText.textContent = label;
+}
+function setSteps(n) {
+  [step1,step2,step3].forEach((s,i) => s.classList.toggle('active', i < n));
+}
+function updateSizeUI() {
+  const pct = Math.round(frame.size * 100);
+  sizeBar.style.width = pct + '%';
+  sizeVal.textContent = pct + '%';
+}
+
+/* ── Frame geometry ── */
+function getFramePx() {
+  const W = canvas.width, H = canvas.height;
+  const fw = W * frame.size;
+  const fh = fw * 0.5625;
+  const fx = (1 - frame.x) * W - fw / 2;
+  const fy = frame.y * H - fh / 2;
+  return { fx, fy, fw, fh };
+}
+
+/* ── Draw frame overlay ── */
+function drawFrame(pulse) {
+  const { fx, fy, fw, fh } = getFramePx();
+  const W = canvas.width, H = canvas.height;
+
+  /* vignette – 4 rects */
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillRect(0,      0,        W,  fy);
+  ctx.fillRect(0,      fy+fh,    W,  H - fy - fh);
+  ctx.fillRect(0,      fy,       fx, fh);
+  ctx.fillRect(fx+fw,  fy,       W - fx - fw, fh);
+
+  /* border */
+  const a = pulse ? (0.6 + 0.35*Math.sin(Date.now()/150)) : 1;
+  ctx.strokeStyle = `rgba(255,229,0,${a})`;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(fx+1.5, fy+1.5, fw-3, fh-3);
+
+  /* neubrutalism corners – thick L-brackets */
+  const cl = Math.min(fw,fh) * 0.08;
+  ctx.strokeStyle = '#FFE500';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'square';
+  [
+    [fx,    fy,    cl, 0,    0,  cl],
+    [fx+fw, fy,   -cl, 0,    0,  cl],
+    [fx,    fy+fh, cl, 0,    0, -cl],
+    [fx+fw, fy+fh,-cl, 0,    0, -cl],
+  ].forEach(([ox,oy,hx,hy,vx,vy])=>{
+    ctx.beginPath();
+    ctx.moveTo(ox+hx, oy+hy);
+    ctx.lineTo(ox,    oy);
+    ctx.lineTo(ox+vx, oy+vy);
+    ctx.stroke();
+  });
+}
+
+/* ── Draw pinch dots ── */
+function drawPinchDot(x, y, active) {
+  const sx = (1-x)*canvas.width, sy = y*canvas.height;
+  ctx.beginPath(); ctx.arc(sx, sy, 14, 0, Math.PI*2);
+  ctx.fillStyle = active ? 'rgba(255,229,0,0.2)' : 'rgba(255,255,255,0.1)';
+  ctx.fill();
+  ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI*2);
+  ctx.fillStyle = active ? '#FFE500' : 'rgba(255,255,255,0.5)';
+  ctx.fill();
+  ctx.strokeStyle = '#0D0D0D'; ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+/* ── Countdown ── */
+function startCountdown() {
+  if (state === 'countdown') return;
+  state = 'countdown';
+  cdVal = 3;
+  timerNum.textContent = cdVal;
+  timerNum.classList.add('show');
+  setMode('countdown','COUNTDOWN');
+  setSteps(3);
+  statusMsg.textContent = 'Bersiap…';
+
+  cdInterval = setInterval(()=>{
+    cdVal--;
+    if (cdVal > 0) {
+      timerNum.textContent = cdVal;
+    } else {
+      clearInterval(cdInterval); cdInterval = null;
+      timerNum.classList.remove('show');
+      capturePhoto();
+    }
+  }, 1000);
+}
+
+function cancelCountdown() {
+  if (cdInterval) { clearInterval(cdInterval); cdInterval = null; }
+  cdVal = 3;
+  timerNum.classList.remove('show');
+}
+
+/* ── Capture ── */
+function capturePhoto() {
+  state = 'captured';
+  const { fx, fy, fw, fh } = getFramePx();
+  const pc = document.createElement('canvas');
+  pc.width = Math.round(fw); pc.height = Math.round(fh);
+  pc.getContext('2d').drawImage(canvas,
+    Math.round(fx), Math.round(fy), Math.round(fw), Math.round(fh),
+    0, 0, Math.round(fw), Math.round(fh)
+  );
+
+  /* flash */
+  const fl = document.createElement('div');
+  fl.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:99;pointer-events:none;transition:opacity 0.5s';
+  document.body.appendChild(fl);
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+    fl.style.opacity='0'; setTimeout(()=>fl.remove(),550);
+  }); });
+
+  photoDataUrl = pc.toDataURL('image/jpeg', 0.95);
+  const now = new Date();
+  metaTime.textContent = now.toLocaleTimeString('id-ID');
+  metaSize.textContent = Math.round(fw)+'×'+Math.round(fh)+' px';
+  resultImg.src = photoDataUrl;
+  setMode('captured','CAPTURED');
+  hintEl.classList.remove('show');
+  setTimeout(()=>{ resultScreen.style.display='block'; }, 150);
+}
+
+/* ── Retake ── */
+function retake() {
+  state   = 'idle';
+  frame   = { x:0.5, y:0.5, size:0.38 };
+  initDist = null;
+  idleCount = 0;
+  resultScreen.style.display = 'none';
+  cancelCountdown();
+  setMode('idle','IDLE');
+  setSteps(1);
+  updateSizeUI();
+  statusMsg.textContent = 'Pinch kedua tangan untuk membingkai';
+  hintEl.classList.add('show');
+  cardLeft.classList.remove('active');
+  cardRight.classList.remove('active');
+}
+
+/* ── Download ── */
+function downloadPhoto() {
+  if (!photoDataUrl) return;
+  const a = document.createElement('a');
+  a.href = photoDataUrl;
+  a.download = 'handframe-'+Date.now()+'.jpg';
+  a.click();
+}
+
+/* ── MediaPipe results ── */
+function onResults(results) {
+  if (state === 'captured' || state === 'loading') return;
+
+  const W = canvas.width, H = canvas.height;
+
+  /* draw mirrored video */
+  ctx.save();
+  ctx.translate(W, 0); ctx.scale(-1, 1);
+  ctx.drawImage(results.image, 0, 0, W, H);
+  ctx.restore();
+
+  const lms    = results.multiHandLandmarks ?? [];
+  const nHands = lms.length;
+
+  /* per-hand pinch state */
+  let pLeft = false, pRight = false;
+  let pc1 = null, pc2 = null;
+
+  if (nHands >= 1) { pLeft  = isPinching(lms[0]); pc1 = pinchCenter(lms[0]); }
+  if (nHands >= 2) { pRight = isPinching(lms[1]); pc2 = pinchCenter(lms[1]); }
+
+  /* update pinch UI cards */
+  cardLeft.classList.toggle('active', pLeft);
+  cardRight.classList.toggle('active', pRight && nHands >= 2);
+
+  const bothPinching = nHands === 2 && pLeft && pRight;
+
+  if (bothPinching) {
+    /* ── FRAMING ── */
+    cancelCountdown();
+    hintEl.classList.remove('show');
+    state = 'framing';
+    idleCount = 0;
+
+    const cx = (pc1.x + pc2.x) / 2;
+    const cy = (pc1.y + pc2.y) / 2;
+    const d  = dist2D(pc1, pc2);
+
+    if (!initDist) { initDist = d; initSize = frame.size; }
+    frame.size = Math.max(0.12, Math.min(0.97, initSize * (d / initDist)));
+    frame.x = cx; frame.y = cy;
+
+    updateSizeUI();
+    drawFrame(false);
+
+    /* draw pinch dots */
+    drawPinchDot(pc1.x, pc1.y, true);
+    drawPinchDot(pc2.x, pc2.y, true);
+
+    /* dashed line between centers */
+    ctx.beginPath();
+    ctx.moveTo((1-pc1.x)*W, pc1.y*H);
+    ctx.lineTo((1-pc2.x)*W, pc2.y*H);
+    ctx.strokeStyle='rgba(255,229,0,0.35)';
+    ctx.lineWidth=1.5; ctx.setLineDash([5,9]); ctx.stroke(); ctx.setLineDash([]);
+
+    setMode('framing','FRAMING');
+    setSteps(2);
+    statusMsg.textContent = 'Lepas pinch untuk mulai timer…';
+
+  } else if (state === 'framing') {
+    /* hands released from framing → start countdown */
+    initDist = null;
+    drawFrame(false);
+    startCountdown();
+
+  } else if (state === 'countdown') {
+    drawFrame(true);
+
+    /* draw whatever hand dots are visible */
+    if (nHands >= 1 && pc1) drawPinchDot(pc1.x, pc1.y, pLeft);
+    if (nHands >= 2 && pc2) drawPinchDot(pc2.x, pc2.y, pRight);
+
+    /* if both hands pinch again during countdown → cancel, go back to framing */
+    if (bothPinching) {
+      cancelCountdown();
+      state = 'framing';
+      initDist = null;
+      setMode('framing','FRAMING');
+      setSteps(2);
+      statusMsg.textContent = 'Lepas pinch untuk mulai timer…';
+    }
+
+  } else {
+    /* idle */
+    idleCount++;
+    if (idleCount > 20) hintEl.classList.add('show');
+
+    if (nHands === 0) {
+      cardLeft.classList.remove('active');
+      cardRight.classList.remove('active');
+    }
+
+    setMode('idle','IDLE');
+    setSteps(1);
+    statusMsg.textContent = 'Pinch kedua tangan untuk membingkai foto';
+  }
+}
+
+/* ── Init MediaPipe ── */
+const hands = new Hands({
+  locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
+});
+hands.setOptions({
+  maxNumHands: 2,
+  modelComplexity: 1,
+  minDetectionConfidence: 0.72,
+  minTrackingConfidence: 0.55,
+});
+hands.onResults(onResults);
+
+const camera = new Camera(video, {
+  onFrame: async () => {
+    if (state !== 'captured') await hands.send({ image: video });
+  },
+  width: 1280, height: 720,
+});
+
+camera.start().then(()=>{
+  state = 'idle';
+  loadingEl.style.display = 'none';
+  document.getElementById('live-badge').style.display = 'flex';
+  statusMsg.textContent = 'Pinch kedua tangan untuk membingkai foto';
+  hintEl.classList.add('show');
+  setMode('idle','IDLE');
+  resize();
+}).catch(err=>{
+  loadingMsg.textContent = 'Kamera ditolak — izinkan di browser';
+  console.error(err);
+});
+</script>
+</body>
+</html>
