@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>INFORMATICS Handframe</title>
+<title>INFORMATICS Handframe Photobooth</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -21,9 +21,8 @@
   --border:  3px solid var(--black);
 }
 
-/* Menggunakan 100dvh agar tidak tertutup address bar HP */
 html, body {
-  height: 100dvh;
+  height: 100%;
   background: var(--white);
   font-family: 'Space Grotesk', system-ui, sans-serif;
   color: var(--black);
@@ -34,9 +33,10 @@ video { display: none; }
 
 /* ── Layout ─────────────────────────────────────── */
 .app {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100vh;
+  max-height: 100vh;
 }
 
 /* ── Header ─────────────────────────────────────── */
@@ -74,17 +74,15 @@ header {
 .badge.live { background: var(--green); color: var(--white); }
 .badge.live::before { content: '● '; }
 
-/* ── Main layout (Responsive Flex) ───────────────── */
+/* ── Main layout ─────────────────────────────────── */
 main {
-  display: flex;
-  flex-direction: row;
-  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 280px;
   overflow: hidden;
 }
 
 /* ── Camera section ─────────────────────────────── */
 .cam-section {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -94,23 +92,22 @@ main {
   position: relative;
 }
 
-/* Wrapper merespons aspek rasio video secara native */
 .cam-wrapper {
   position: relative;
   border: var(--border);
   box-shadow: var(--shadow-lg);
   background: #000;
   overflow: hidden;
-  max-width: 100%;
-  max-height: 100%;
-  aspect-ratio: 16 / 9; /* Akan ditimpa JS jika pakai HP portrait */
-  margin: auto;
+  width: 100%;
+  max-width: 900px;
+  aspect-ratio: 16 / 9;
 }
 
 #canvas {
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: cover;
 }
 
 /* Timer overlay */
@@ -163,7 +160,7 @@ main {
   color: rgba(255,229,0,0.7);
 }
 
-/* Hint hands on camera */
+/* Hint hands */
 #hint {
   position: absolute;
   bottom: 18px;
@@ -177,7 +174,7 @@ main {
 }
 #hint.show { opacity: 1; }
 .hint-hand {
-  font-size: clamp(30px, 8vw, 40px);
+  font-size: 40px;
   animation: bob 1.8s ease-in-out infinite;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
 }
@@ -186,8 +183,6 @@ main {
 
 /* ── Side panel ──────────────────────────────────── */
 .panel {
-  width: 280px;
-  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -196,7 +191,6 @@ main {
   gap: 12px;
 }
 
-/* Panel card */
 .pcard {
   border: var(--border);
   box-shadow: var(--shadow);
@@ -213,13 +207,13 @@ main {
   margin-bottom: 10px;
 }
 
-/* Filter controls */
+/* Grids for Buttons */
 .filter-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
 }
-.f-btn {
+.f-btn, .t-btn, .c-btn {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 10px;
   font-weight: 700;
@@ -230,72 +224,12 @@ main {
   background: var(--gray);
   cursor: pointer;
   transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
+  text-align: center;
 }
-.f-btn.active {
+.f-btn.active, .t-btn.active, .c-btn.active {
   background: var(--yellow);
   box-shadow: 2px 2px 0 var(--black);
   transform: translate(-1px, -1px);
-}
-
-/* Pinch indicators */
-.pinch-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.pinch-card {
-  border: 2px solid var(--black);
-  padding: 10px 8px;
-  text-align: center;
-  background: var(--gray);
-  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
-}
-.pinch-card.active {
-  background: var(--green);
-  box-shadow: 3px 3px 0 var(--black);
-  transform: translate(-1px, -1px);
-}
-.pinch-card.active .pinch-icon { filter: none; }
-.pinch-icon {
-  font-size: 28px;
-  display: block;
-  margin-bottom: 4px;
-  filter: grayscale(1) opacity(0.4);
-  transition: filter 0.15s;
-}
-.pinch-label {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-
-/* Frame size bar */
-.size-bar-wrap {
-  margin-top: 6px;
-  border: 2px solid var(--black);
-  height: 18px;
-  background: var(--gray);
-  position: relative;
-  overflow: hidden;
-}
-.size-bar-fill {
-  height: 100%;
-  background: var(--yellow);
-  border-right: 2px solid var(--black);
-  transition: width 0.1s;
-  width: 70%;
-}
-.size-val {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  mix-blend-mode: multiply;
 }
 
 /* Mode display */
@@ -359,36 +293,37 @@ footer {
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
 .result-inner {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: 1fr 280px;
   height: 100%;
 }
 
 .result-photo-area {
-  flex: 1;
   background: #111;
   border-right: var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 28px;
+  overflow-y: auto;
 }
 
 #result-img {
   max-width: 100%;
-  max-height: 100%;
-  border: var(--border);
-  box-shadow: var(--shadow-lg);
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  border: 1px solid rgba(0,0,0,0.1);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.6);
   object-fit: contain;
+  background-color: var(--white);
 }
 
 .result-panel {
-  width: 280px;
   padding: 24px 18px;
   display: flex;
   flex-direction: column;
   gap: 18px;
-  flex-shrink: 0;
   overflow-y: auto;
 }
 
@@ -441,57 +376,13 @@ footer {
 .nbtn:hover  { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--black); }
 .nbtn:active { transform: translate(2px,2px);   box-shadow: 2px 2px 0 var(--black); }
 .nbtn.primary { background: var(--yellow); }
-.nbtn.danger  { background: var(--red); color: var(--white); }
 
-/* ── RESPONSIVE MOBILE FIX ───────────────────────── */
+/* Mobile view adjustments */
 @media (max-width: 768px) {
-  .header-logo { font-size: 20px; }
-  
-  main {
-    flex-direction: column;
-  }
-  
-  .cam-section {
-    flex: none;
-    height: 55dvh; /* Memberi ruang utama untuk kamera */
-    padding: 10px;
-    border-right: none;
-    border-bottom: var(--border);
-  }
-  
-  .panel {
-    width: 100%;
-    flex: 1;
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Layout kartu 2 kolom di HP */
-    gap: 12px;
-    padding: 12px;
-    align-content: start;
-  }
-  
-  .pcard { padding: 10px; margin-bottom: 0; }
-  
-  /* Status Mode & Ukuran Bingkai ambil lebar penuh */
-  .pcard:nth-child(1), .pcard:nth-child(4) {
-    grid-column: span 2;
-  }
-  
-  .result-inner {
-    flex-direction: column;
-  }
-  
-  .result-photo-area {
-    flex: none;
-    height: 50dvh;
-    border-right: none;
-    border-bottom: var(--border);
-    padding: 14px;
-  }
-  
-  .result-panel {
-    width: 100%;
-    flex: 1;
-  }
+  main { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+  .panel { flex-direction: row; flex-wrap: wrap; max-height: 250px; }
+  .pcard { flex: 1 1 calc(50% - 10px); }
+  .result-inner { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
 }
 </style>
 </head>
@@ -500,6 +391,7 @@ footer {
 <video id="video" playsinline autoplay muted></video>
 
 <div class="app">
+
   <header>
     <div class="header-logo">INFORMATICS <span style="opacity:1;font-size:26px;font-family:'Bebas Neue',sans-serif;letter-spacing:0.06em;">Handframe</span></div>
     <div class="header-right">
@@ -509,32 +401,32 @@ footer {
   </header>
 
   <main>
+
     <div class="cam-section">
       <div class="cam-wrapper">
         <canvas id="canvas"></canvas>
-
-        <div id="timer-overlay">
-          <div id="timer-num">3</div>
-        </div>
-
-        <div id="hint">
-          <div class="hint-hand">🤏</div>
-          <div class="hint-hand">🤏</div>
-        </div>
-
-        <div id="loading">
-          <div class="spinner"></div>
-          <div id="loading-msg">Memuat model hands…</div>
-        </div>
+        <div id="timer-overlay"><div id="timer-num">3</div></div>
+        <div id="hint"><div class="hint-hand">🤏</div><div class="hint-hand">🤏</div></div>
+        <div id="loading"><div class="spinner"></div><div id="loading-msg">Memuat model hands…</div></div>
       </div>
     </div>
 
     <aside class="panel">
+
       <div class="pcard">
         <div class="pcard-title">Status Mode</div>
         <div class="mode-pill idle" id="mode-pill">
           <div class="mode-dot"></div>
           <div id="mode-text">IDLE</div>
+        </div>
+      </div>
+      
+      <div class="pcard">
+        <div class="pcard-title">Jumlah Foto</div>
+        <div class="filter-row" style="grid-template-columns: 1fr 1fr 1fr;">
+          <button class="c-btn" data-c="1">1</button>
+          <button class="c-btn active" data-c="3">3</button>
+          <button class="c-btn" data-c="4">4</button>
         </div>
       </div>
 
@@ -549,32 +441,22 @@ footer {
       </div>
 
       <div class="pcard">
-        <div class="pcard-title">Deteksi Pinch</div>
-        <div class="pinch-row">
-          <div class="pinch-card" id="card-left">
-            <span class="pinch-icon">🤏</span>
-            <div class="pinch-label">Kiri</div>
-          </div>
-          <div class="pinch-card" id="card-right">
-            <span class="pinch-icon">🤏</span>
-            <div class="pinch-label">Kanan</div>
-          </div>
+        <div class="pcard-title">Tema Photostrip</div>
+        <div class="filter-row">
+          <button class="t-btn active" data-t="dark">Dark</button>
+          <button class="t-btn" data-t="pinky">Pinky</button>
+          <button class="t-btn" data-t="colorful">Colorful</button>
+          <button class="t-btn" data-t="vintage">Vintage</button>
         </div>
       </div>
 
-      <div class="pcard">
-        <div class="pcard-title">Ukuran Bingkai</div>
-        <div class="size-bar-wrap">
-          <div class="size-bar-fill" id="size-bar"></div>
-          <div class="size-val" id="size-val">70%</div>
-        </div>
-      </div>
     </aside>
   </main>
 
   <footer>
     <div id="status-msg">Izinkan akses kamera untuk mulai</div>
   </footer>
+
 </div>
 
 <div id="result-screen">
@@ -585,11 +467,11 @@ footer {
     <div class="result-panel">
       <div>
         <div class="result-title">FOTO<br>BERHASIL!</div>
-        <div class="result-sub">Pinch Camera · HandFrame</div>
+        <div class="result-sub">Photostrip Mode · HandFrame</div>
       </div>
       <div class="result-meta">
         <div class="meta-row"><span>Waktu</span><span id="meta-time">—</span></div>
-        <div class="meta-row"><span>Ukuran</span><span id="meta-size">—</span></div>
+        <div class="meta-row"><span>Resolusi</span><span id="meta-size">—</span></div>
       </div>
       <div class="btn-group">
         <button class="nbtn primary" onclick="downloadPhoto()">⬇ Simpan Foto</button>
@@ -606,6 +488,10 @@ footer {
 const video       = document.getElementById('video');
 const canvas      = document.getElementById('canvas');
 const ctx         = canvas.getContext('2d');
+
+canvas.width      = 1280;
+canvas.height     = 720;
+
 const timerNum    = document.getElementById('timer-num');
 const loadingEl   = document.getElementById('loading');
 const loadingMsg  = document.getElementById('loading-msg');
@@ -615,13 +501,11 @@ const resultScreen= document.getElementById('result-screen');
 const resultImg   = document.getElementById('result-img');
 const modePill    = document.getElementById('mode-pill');
 const modeText    = document.getElementById('mode-text');
-const cardLeft    = document.getElementById('card-left');
-const cardRight   = document.getElementById('card-right');
-const sizeBar     = document.getElementById('size-bar');
-const sizeVal     = document.getElementById('size-val');
 const metaTime    = document.getElementById('meta-time');
 const metaSize    = document.getElementById('meta-size');
 const filterBtns  = document.querySelectorAll('.f-btn');
+const themeBtns   = document.querySelectorAll('.t-btn');
+const countBtns   = document.querySelectorAll('.c-btn');
 
 /* ── State ── */
 let state      = 'loading';
@@ -630,12 +514,24 @@ let initDist   = null;
 let initSize   = 0.70;
 let cdVal      = 3;
 let cdInterval = null;
-let photoDataUrl = null;
-let idleCount  = 0;
 let currentFilter = 'none';
-let triggerCapture = false; // Mempercepat render dan menghapus lag
+let currentTheme  = 'dark';
 
-/* ── Filter Logic ── */
+/* ── Photostrip Config & Decoration Data ── */
+let capturedPhotos = []; 
+let TOTAL_PHOTOS = 3; 
+const PINCH_THRESH = 0.072; 
+let photoDataUrl = '';
+
+// Menambahkan data dekorasi: emotes (stiker) dan tapeColor (warna selotip) untuk masing-masing tema
+const THEMES = {
+  dark:     { bg: '#0D0D0D', border: '#FFE500', text: '#FFE500', title: 'INFORMATICS', sub: 'UPN VETERAN JATIM', emotes: ['⚡', '✨', '💻', '👾'], tapeColor: 'rgba(255, 229, 0, 0.6)' },
+  pinky:    { bg: '#FFC0CB', border: '#FFFFFF', text: '#D81B60', title: 'SWEET MEMORIES', sub: 'PHOTOBOOTH', emotes: ['💖', '🎀', '🌸', '🍓'], tapeColor: 'rgba(255, 255, 255, 0.6)' },
+  colorful: { bg: '#4A90E2', border: '#FFFFFF', text: '#FFFFFF', title: 'GOOD VIBES', sub: 'STAY COLORFUL', emotes: ['🌈', '⭐', '🎈', '🎨'], tapeColor: 'rgba(255, 229, 0, 0.8)' },
+  vintage:  { bg: '#E6D5B8', border: '#4A3B32', text: '#4A3B32', title: 'RETRO STRIP', sub: 'CLASSIC CAPTURE', emotes: ['🕰️', '🎞️', '📻', '☕'], tapeColor: 'rgba(74, 59, 50, 0.4)' }
+};
+
+/* ── Event Listeners ── */
 filterBtns.forEach(btn => {
   btn.addEventListener('click', (e) => {
     filterBtns.forEach(b => b.classList.remove('active'));
@@ -644,116 +540,88 @@ filterBtns.forEach(btn => {
   });
 });
 
+themeBtns.forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    themeBtns.forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    currentTheme = e.target.getAttribute('data-t');
+  });
+});
+
+countBtns.forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    countBtns.forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    TOTAL_PHOTOS = parseInt(e.target.getAttribute('data-c'));
+    statusMsg.textContent = `Pilih jumlah foto: ${TOTAL_PHOTOS}. Pinch untuk membingkai.`;
+  });
+});
+
 /* ── Helpers ── */
-function dist2D(a, b) {
-  const dx = a.x - b.x, dy = a.y - b.y;
-  return Math.sqrt(dx*dx + dy*dy);
-}
+function dist2D(a, b) { return Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2); }
+function isPinching(lms) { return dist2D(lms[4], lms[8]) < PINCH_THRESH; }
+function pinchCenter(lms) { return { x: (lms[4].x + lms[8].x) / 2, y: (lms[4].y + lms[8].y) / 2 }; }
 
-// Deteksi pinch HD dinamis (anti jempol salah paham)
-function isPinching(lms) {
-  if (!lms || lms.length < 21) return false;
-  const fingerDist = dist2D(lms[4], lms[8]);
-  const handScale  = dist2D(lms[0], lms[9]); 
-  if (handScale === 0) return false;
-  return (fingerDist / handScale) < 0.38; 
-}
-
-function pinchCenter(lms) {
-  return { x: (lms[4].x + lms[8].x) / 2, y: (lms[4].y + lms[8].y) / 2 };
-}
-
-/* ── UI update ── */
 function setMode(m, label) {
   modePill.className = 'mode-pill ' + m;
   modeText.textContent = label;
 }
-function updateSizeUI() {
-  const pct = Math.round(frame.size * 100);
-  sizeBar.style.width = pct + '%';
-  sizeVal.textContent = pct + '%';
-}
 
-/* ── Frame geometry (Merespons native resolusi) ── */
 function getFramePx() {
   const W = canvas.width, H = canvas.height;
   const fw = W * frame.size;
-  const fh = fw * 0.5625;
-  let fx = (1 - frame.x) * W - fw / 2;
-  let fy = frame.y * H - fh / 2;
-
-  if (fx < 0) fx = 0;
-  if (fx + fw > W) fx = W - fw;
-  if (fy < 0) fy = 0;
-  if (fy + fh > H) fy = H - fh;
-
+  const fh = fw * 0.5625; // 16:9 aspect ratio
+  const fx = (1 - frame.x) * W - fw / 2;
+  const fy = frame.y * H - fh / 2;
   return { fx, fy, fw, fh };
 }
 
-/* ── Draw frame overlay (UI Auto Scale untuk HD) ── */
+/* ── Drawing Frame & UI ── */
 function drawFrame(pulse) {
   const { fx, fy, fw, fh } = getFramePx();
   const W = canvas.width, H = canvas.height;
-  const scale = W / 800; // Skala dinamis agar garis UI tidak tipis di resolusi HD
 
-  /* vignette */
   ctx.fillStyle = 'rgba(0,0,0,0.55)';
-  ctx.fillRect(0,      0,        W,  fy);
-  ctx.fillRect(0,      fy+fh,    W,  H - fy - fh);
-  ctx.fillRect(0,      fy,       fx, fh);
-  ctx.fillRect(fx+fw,  fy,       W - fx - fw, fh);
+  ctx.fillRect(0, 0, W, fy);
+  ctx.fillRect(0, fy+fh, W, H - fy - fh);
+  ctx.fillRect(0, fy, fx, fh);
+  ctx.fillRect(fx+fw, fy, W - fx - fw, fh);
 
-  /* border */
   const a = pulse ? (0.6 + 0.35*Math.sin(Date.now()/150)) : 1;
   ctx.strokeStyle = `rgba(255,229,0,${a})`;
-  ctx.lineWidth = 3 * scale;
+  ctx.lineWidth = 3;
   ctx.strokeRect(fx+1.5, fy+1.5, fw-3, fh-3);
 
-  /* neubrutalism corners */
   const cl = Math.min(fw,fh) * 0.08;
   ctx.strokeStyle = '#FFE500';
-  ctx.lineWidth = 5 * scale;
+  ctx.lineWidth = 5;
   ctx.lineCap = 'square';
   [
-    [fx,    fy,    cl, 0,    0,  cl],
-    [fx+fw, fy,   -cl, 0,    0,  cl],
-    [fx,    fy+fh, cl, 0,    0, -cl],
-    [fx+fw, fy+fh,-cl, 0,    0, -cl],
+    [fx, fy, cl, 0, 0, cl], [fx+fw, fy, -cl, 0, 0, cl],
+    [fx, fy+fh, cl, 0, 0, -cl], [fx+fw, fy+fh, -cl, 0, 0, -cl],
   ].forEach(([ox,oy,hx,hy,vx,vy])=>{
-    ctx.beginPath();
-    ctx.moveTo(ox+hx, oy+hy);
-    ctx.lineTo(ox,    oy);
-    ctx.lineTo(ox+vx, oy+vy);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ox+hx, oy+hy); ctx.lineTo(ox, oy); ctx.lineTo(ox+vx, oy+vy); ctx.stroke();
   });
 }
 
-/* ── Draw pinch dots (Auto Scale HD) ── */
 function drawPinchDot(x, y, active) {
   const sx = (1-x)*canvas.width, sy = y*canvas.height;
-  const scale = canvas.width / 800;
-  
-  ctx.beginPath(); ctx.arc(sx, sy, 14 * scale, 0, Math.PI*2);
-  ctx.fillStyle = active ? 'rgba(255,229,0,0.2)' : 'rgba(255,255,255,0.1)';
-  ctx.fill();
-  
-  ctx.beginPath(); ctx.arc(sx, sy, 7 * scale, 0, Math.PI*2);
-  ctx.fillStyle = active ? '#FFE500' : 'rgba(255,255,255,0.5)';
-  ctx.fill();
-  
-  ctx.strokeStyle = '#0D0D0D'; ctx.lineWidth = 2 * scale;
-  ctx.stroke();
+  ctx.beginPath(); ctx.arc(sx, sy, 14, 0, Math.PI*2);
+  ctx.fillStyle = active ? 'rgba(255,229,0,0.2)' : 'rgba(255,255,255,0.1)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI*2);
+  ctx.fillStyle = active ? '#FFE500' : 'rgba(255,255,255,0.5)'; ctx.fill();
+  ctx.strokeStyle = '#0D0D0D'; ctx.lineWidth = 2; ctx.stroke();
 }
 
-/* ── Countdown ── */
+/* ── Capture Flow ── */
 function startCountdown() {
-  if (state === 'countdown') return;
+  if (state === 'countdown' || state === 'capturing') return;
   state = 'countdown';
   cdVal = 3;
   timerNum.textContent = cdVal;
   timerNum.classList.add('show');
-  setMode('countdown','COUNTDOWN');
-  statusMsg.textContent = 'Bersiap…';
+  setMode('countdown', `FOTO ${capturedPhotos.length + 1}/${TOTAL_PHOTOS}`);
+  statusMsg.textContent = `Pose untuk foto ke-${capturedPhotos.length + 1}...`;
 
   cdInterval = setInterval(()=>{
     cdVal--;
@@ -762,226 +630,265 @@ function startCountdown() {
     } else {
       clearInterval(cdInterval); cdInterval = null;
       timerNum.classList.remove('show');
-      triggerCapture = true; // Triggers Zero-Lag Capture di onResults
+      takeSingleShot();
     }
   }, 1000);
 }
 
-function cancelCountdown() {
+function cancelSequence() {
   if (cdInterval) { clearInterval(cdInterval); cdInterval = null; }
-  cdVal = 3;
   timerNum.classList.remove('show');
+  capturedPhotos = [];
+  state = 'framing';
+  setMode('framing','FRAMING');
+  statusMsg.textContent = 'Frame di-reset. Lepas pinch untuk mulai ulang timer…';
 }
 
-/* ── ZERO-LAG HD Capture ── */
-// Tidak perlu lagi render offscreen raksasa dua kali, langsung ambil dari canvas yang sudah HD
-function executeHDCapture() {
-  state = 'captured';
+function takeSingleShot() {
+  state = 'capturing'; 
   const { fx, fy, fw, fh } = getFramePx();
-
-  const clampedFx = Math.max(0, Math.min(canvas.width - fw, fx));
-  const clampedFy = Math.max(0, Math.min(canvas.height - fh, fy));
-
-  const cropCanvas = document.createElement('canvas');
-  cropCanvas.width = Math.round(fw);
-  cropCanvas.height = Math.round(fh);
-  const cropCtx = cropCanvas.getContext('2d');
-
-  cropCtx.drawImage(
-    canvas, 
-    Math.round(clampedFx), Math.round(clampedFy), Math.round(fw), Math.round(fh),
+  
+  const pc = document.createElement('canvas');
+  pc.width = Math.round(fw); pc.height = Math.round(fh);
+  pc.getContext('2d').drawImage(canvas,
+    Math.round(fx), Math.round(fy), Math.round(fw), Math.round(fh),
     0, 0, Math.round(fw), Math.round(fh)
   );
+  capturedPhotos.push(pc);
 
-  /* flash */
   const fl = document.createElement('div');
   fl.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:99;pointer-events:none;transition:opacity 0.5s';
   document.body.appendChild(fl);
-  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
-    fl.style.opacity='0'; setTimeout(()=>fl.remove(),550);
-  }); });
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ fl.style.opacity='0'; setTimeout(()=>fl.remove(),550); }); });
 
-  photoDataUrl = cropCanvas.toDataURL('image/jpeg', 0.95);
-  const now = new Date();
-  metaTime.textContent = now.toLocaleTimeString('id-ID');
-  metaSize.textContent = Math.round(fw)+'×'+Math.round(fh)+' px (HD)';
-  resultImg.src = photoDataUrl;
-  setMode('captured','CAPTURED');
-  hintEl.classList.remove('show');
-  setTimeout(()=>{ resultScreen.style.display='flex'; }, 150);
+  if (capturedPhotos.length < TOTAL_PHOTOS) {
+    statusMsg.textContent = 'Menyiapkan jepretan selanjutnya...';
+    setTimeout(() => {
+      state = 'idle'; 
+      startCountdown();
+    }, 1000); 
+  } else {
+    generatePhotostrip();
+  }
 }
 
-/* ── Retake ── */
+/* ── Compile Photostrip Canvas & Overlays ── */
+function generatePhotostrip() {
+  state = 'captured';
+  const tm = THEMES[currentTheme];
+  
+  const outW = 600;
+  const pad = 40;  
+  const gap = 30;  
+  
+  const sample = capturedPhotos[0];
+  const aspect = sample.height / sample.width;
+  const photoW = outW - (pad * 2);
+  const photoH = photoW * aspect;
+  
+  const headerH = 60;  
+  const footerH = 180; 
+  const outH = headerH + (photoH * TOTAL_PHOTOS) + (gap * (TOTAL_PHOTOS - 1)) + footerH + pad;
+
+  const sc = document.createElement('canvas');
+  sc.width = outW; sc.height = outH;
+  const sctx = sc.getContext('2d');
+
+  // Background Dasar
+  sctx.fillStyle = tm.bg;
+  sctx.fillRect(0, 0, outW, outH);
+
+  // Pola Titik/Bintang Acak (Hiasan Latar Belakang)
+  for (let j = 0; j < 30; j++) {
+    sctx.fillStyle = tm.text;
+    sctx.globalAlpha = 0.15;
+    sctx.beginPath();
+    sctx.arc(Math.random() * outW, Math.random() * outH, Math.random() * 3 + 1, 0, Math.PI * 2);
+    sctx.fill();
+  }
+  sctx.globalAlpha = 1.0;
+
+  // Garis Frame Luar
+  sctx.strokeStyle = tm.text;
+  sctx.lineWidth = 4;
+  sctx.strokeRect(15, 15, outW - 30, outH - 30);
+
+  // Menggambar tiap foto dan overlay-nya
+  let currY = headerH;
+  for(let i = 0; i < TOTAL_PHOTOS; i++) {
+    const bw = 12; // Tebal border polaroid
+
+    // Border Putih/Berwarna untuk Foto
+    sctx.fillStyle = tm.border;
+    sctx.fillRect(pad - bw, currY - bw, photoW + bw*2, photoH + bw*2);
+    
+    // Gambar Jepretan Kamera
+    sctx.drawImage(capturedPhotos[i], pad, currY, photoW, photoH);
+
+    // ================= OVERLAY DEKORASI =================
+
+    // 1. Washi Tape (Selotip) di bagian atas tengah foto
+    sctx.save();
+    sctx.translate(outW / 2, currY - bw + 4); // Posisi tengah atas border foto
+    sctx.rotate((Math.random() - 0.5) * 0.15); // Kemiringan acak selotip
+    sctx.fillStyle = tm.tapeColor;
+    sctx.fillRect(-70, -12, 140, 24); // Menggambar selotip
+    sctx.restore();
+
+    // 2. Emote / Stiker Tematik di pojok foto
+    const emote = tm.emotes[i % tm.emotes.length];
+    sctx.save();
+    sctx.font = '45px Arial'; // Ukuran stiker emote
+    sctx.textAlign = 'center';
+    sctx.textBaseline = 'middle';
+    
+    // Menempatkan stiker di pojok kiri bawah atau kanan bawah secara bergantian
+    if (i % 2 === 0) {
+      sctx.translate(pad + 10, currY + photoH - 10); // Kiri bawah
+      sctx.rotate(-0.25);
+    } else {
+      sctx.translate(pad + photoW - 10, currY + photoH - 10); // Kanan bawah
+      sctx.rotate(0.25);
+    }
+    
+    // Menambahkan efek bayangan halus pada stiker agar terlihat menonjol
+    sctx.shadowColor = 'rgba(0,0,0,0.4)';
+    sctx.shadowBlur = 8;
+    sctx.shadowOffsetY = 4;
+    sctx.fillText(emote, 0, 0);
+    sctx.restore();
+
+    currY += photoH + gap;
+  }
+
+  // Pengaturan posisi footer text
+  currY -= gap; 
+  currY += (footerH / 2);
+
+  sctx.textAlign = 'center';
+  sctx.fillStyle = tm.text;
+  
+  sctx.font = 'bold 54px "Bebas Neue", sans-serif';
+  sctx.fillText(tm.title, outW/2, currY);
+  
+  sctx.font = 'bold 18px "Space Grotesk", sans-serif';
+  sctx.letterSpacing = "10px"; 
+  sctx.fillText(tm.sub, outW/2, currY + 40);
+
+  sctx.font = '500 13px "Space Grotesk", sans-serif';
+  sctx.letterSpacing = "4px";
+  const dateStr = new Date().toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'}).toUpperCase();
+  sctx.fillText(`• ${dateStr} •`, outW/2, currY + 85);
+
+  // Output to UI
+  photoDataUrl = sc.toDataURL('image/jpeg', 0.95);
+  metaTime.textContent = new Date().toLocaleTimeString('id-ID');
+  metaSize.textContent = outW + '×' + Math.floor(outH) + ' px';
+  resultImg.src = photoDataUrl;
+  setMode('captured','BERHASIL');
+  hintEl.classList.remove('show');
+  setTimeout(()=>{ resultScreen.style.display='block'; }, 200);
+}
+
+/* ── Actions ── */
 function retake() {
   state   = 'idle';
-  frame   = { x:0.5, y:0.5, size:0.70 }; 
+  frame   = { x:0.5, y:0.5, size:0.70 };
   initDist = null;
-  idleCount = 0;
+  capturedPhotos = [];
   resultScreen.style.display = 'none';
-  cancelCountdown();
+  if (cdInterval) { clearInterval(cdInterval); cdInterval = null; }
+  timerNum.classList.remove('show');
   setMode('idle','IDLE');
-  updateSizeUI();
-  statusMsg.textContent = 'Pinch kedua tangan untuk membingkai';
+  statusMsg.textContent = 'Pinch kedua tangan untuk membingkai foto';
   hintEl.classList.add('show');
-  cardLeft.classList.remove('active');
-  cardRight.classList.remove('active');
 }
 
-/* ── Download ── */
 function downloadPhoto() {
   if (!photoDataUrl) return;
   const a = document.createElement('a');
   a.href = photoDataUrl;
-  a.download = 'handframe-'+Date.now()+'.jpg';
+  a.download = `photostrip-${currentTheme}-${Date.now()}.jpg`;
   a.click();
 }
 
-/* ── MediaPipe results ── */
+/* ── MediaPipe Results ── */
 function onResults(results) {
-  if (state === 'captured' || state === 'loading') return;
-
-  const vW = results.image.width;
-  const vH = results.image.height;
-
-  // Singkronisasi Native Canvas agar HD 1:1 terhadap input kamera (Responsive tanpa resize script kaku)
-  if (canvas.width !== vW || canvas.height !== vH) {
-    canvas.width = vW;
-    canvas.height = vH;
-    document.querySelector('.cam-wrapper').style.aspectRatio = `${vW} / ${vH}`;
-  }
+  if (state === 'captured' || state === 'loading' || state === 'capturing') return;
 
   const W = canvas.width, H = canvas.height;
-
-  /* draw mirrored video WITH FILTER */
   ctx.save();
   ctx.translate(W, 0); ctx.scale(-1, 1);
-  ctx.filter = currentFilter; 
+  ctx.filter = currentFilter;
   ctx.drawImage(results.image, 0, 0, W, H);
-  ctx.filter = 'none'; 
+  ctx.filter = 'none';
   ctx.restore();
-
-  // Eksekusi foto SEBELUM UI (kuning-kuning) digambar agar gambar bersih & tanpa lag memory
-  if (triggerCapture) {
-    triggerCapture = false;
-    executeHDCapture();
-    return;
-  }
 
   const lms    = results.multiHandLandmarks ?? [];
   const nHands = lms.length;
 
-  const sortedLms = [...lms].sort((a, b) => b[0].x - a[0].x);
-
   let pLeft = false, pRight = false;
   let pc1 = null, pc2 = null;
 
-  if (nHands >= 1) { pLeft  = isPinching(sortedLms[0]); pc1 = pinchCenter(sortedLms[0]); }
-  if (nHands >= 2) { pRight = isPinching(sortedLms[1]); pc2 = pinchCenter(sortedLms[1]); }
-
-  cardLeft.classList.toggle('active', pLeft);
-  cardRight.classList.toggle('active', pRight && nHands >= 2);
+  if (nHands >= 1) { pLeft  = isPinching(lms[0]); pc1 = pinchCenter(lms[0]); }
+  if (nHands >= 2) { pRight = isPinching(lms[1]); pc2 = pinchCenter(lms[1]); }
 
   const bothPinching = nHands === 2 && pLeft && pRight;
 
   if (bothPinching) {
-    cancelCountdown();
+    if (state === 'countdown') {
+       cancelSequence();
+    }
+    
     hintEl.classList.remove('show');
     state = 'framing';
-    idleCount = 0;
-
-    const cx = (pc1.x + pc2.x) / 2;
-    const cy = (pc1.y + pc2.y) / 2;
+    const cx = (pc1.x + pc2.x) / 2, cy = (pc1.y + pc2.y) / 2;
     const d  = dist2D(pc1, pc2);
 
     if (!initDist) { initDist = d; initSize = frame.size; }
-    
-    const targetSize = Math.max(0.12, Math.min(1.0, initSize * (d / initDist)));
-    
-    // Smooth EMA Filter
-    const alpha = 0.25; 
-    frame.size += (targetSize - frame.size) * alpha;
-    frame.x += (cx - frame.x) * alpha;
-    frame.y += (cy - frame.y) * alpha;
+    frame.size = Math.max(0.12, Math.min(1.0, initSize * (d / initDist)));
+    frame.x = cx; frame.y = cy;
 
-    updateSizeUI();
     drawFrame(false);
+    drawPinchDot(pc1.x, pc1.y, true); drawPinchDot(pc2.x, pc2.y, true);
 
-    drawPinchDot(pc1.x, pc1.y, true);
-    drawPinchDot(pc2.x, pc2.y, true);
-
-    ctx.beginPath();
-    ctx.moveTo((1-pc1.x)*W, pc1.y*H);
-    ctx.lineTo((1-pc2.x)*W, pc2.y*H);
-    ctx.strokeStyle='rgba(255,229,0,0.35)';
-    ctx.lineWidth=1.5 * (W/800); ctx.setLineDash([5,9]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo((1-pc1.x)*W, pc1.y*H); ctx.lineTo((1-pc2.x)*W, pc2.y*H);
+    ctx.strokeStyle='rgba(255,229,0,0.35)'; ctx.lineWidth=1.5; ctx.setLineDash([5,9]); ctx.stroke(); ctx.setLineDash([]);
 
     setMode('framing','FRAMING');
-    statusMsg.textContent = 'Lepas pinch untuk mulai timer…';
+    statusMsg.textContent = `Lepas pinch untuk mulai timer (${TOTAL_PHOTOS} Foto)...`;
 
   } else if (state === 'framing') {
     initDist = null;
     drawFrame(false);
     startCountdown();
-
   } else if (state === 'countdown') {
     drawFrame(true);
-
     if (nHands >= 1 && pc1) drawPinchDot(pc1.x, pc1.y, pLeft);
     if (nHands >= 2 && pc2) drawPinchDot(pc2.x, pc2.y, pRight);
-
-    if (bothPinching) {
-      cancelCountdown();
-      state = 'framing';
-      initDist = null;
-      setMode('framing','FRAMING');
-      statusMsg.textContent = 'Lepas pinch untuk mulai timer…';
-    }
-
   } else {
-    idleCount++;
-    if (idleCount > 20) hintEl.classList.add('show');
-
-    if (nHands === 0) {
-      cardLeft.classList.remove('active');
-      cardRight.classList.remove('active');
-    }
-
     setMode('idle','IDLE');
-    statusMsg.textContent = 'Pinch kedua tangan untuk membingkai foto';
+    statusMsg.textContent = 'Pinch kedua tangan untuk mengatur bingkai';
   }
 }
 
 /* ── Init MediaPipe ── */
-const hands = new Hands({
-  locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
-});
-hands.setOptions({
-  maxNumHands: 2,
-  modelComplexity: 1,
-  minDetectionConfidence: 0.72,
-  minTrackingConfidence: 0.55,
-});
+const hands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.72, minTrackingConfidence: 0.55 });
 hands.onResults(onResults);
 
 const camera = new Camera(video, {
-  onFrame: async () => {
-    if (state !== 'captured') await hands.send({ image: video });
-  },
-  width: 1280, 
-  height: 720,
-  facingMode: 'user' // Memaksa prioritas kamera selfie saat dibuka dari HP
+  onFrame: async () => { if (state !== 'captured') await hands.send({ image: video }); },
+  width: 1280, height: 720,
 });
 
 camera.start().then(()=>{
-  state = 'idle';
-  loadingEl.style.display = 'none';
+  state = 'idle'; loadingEl.style.display = 'none';
   document.getElementById('live-badge').style.display = 'flex';
   statusMsg.textContent = 'Pinch kedua tangan untuk membingkai foto';
-  hintEl.classList.add('show');
-  setMode('idle','IDLE');
+  hintEl.classList.add('show'); setMode('idle','IDLE'); 
 }).catch(err=>{
-  loadingMsg.textContent = 'Kamera ditolak — izinkan di browser';
-  console.error(err);
+  loadingMsg.textContent = 'Kamera ditolak — izinkan di browser'; console.error(err);
 });
 </script>
 </body>
