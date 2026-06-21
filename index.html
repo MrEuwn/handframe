@@ -1,390 +1,11 @@
 <!DOCTYPE html>
-<html lang="ms">
+<html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>INFORMATICS Handframe Photobooth</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
-<style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-:root {
-  --black:   #0D0D0D;
-  --white:   #FAFAF5;
-  --yellow:  #FFE500;
-  --red:     #FF3B30;
-  --green:   #00C853;
-  --blue:    #0062FF;
-  --gray:    #E8E8E0;
-  --shadow:  4px 4px 0 var(--black);
-  --shadow-lg: 6px 6px 0 var(--black);
-  --border:  3px solid var(--black);
-}
-
-html, body {
-  height: 100%;
-  background: var(--white);
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  color: var(--black);
-  overflow: hidden;
-}
-
-video { display: none; }
-
-/* ── Rangka Letak (Layout) ─────────────────────────────────────── */
-.app {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  height: 100vh;
-  max-height: 100vh;
-}
-
-/* ── Kepala Halaman (Header) ─────────────────────────────────────── */
-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  height: 52px;
-  background: var(--yellow);
-  border-bottom: var(--border);
-  flex-shrink: 0;
-}
-
-.header-logo {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 26px;
-  letter-spacing: 0.06em;
-  line-height: 1;
-}
-.header-logo span { color: var(--black); opacity: 0.35; font-size: 14px; vertical-align: middle; margin-left: 6px; font-family: 'Space Grotesk', sans-serif; font-weight: 500; letter-spacing: 0.15em; }
-
-.header-right { display: flex; align-items: center; gap: 10px; }
-
-.badge {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  padding: 5px 10px;
-  border: 2px solid var(--black);
-  box-shadow: 2px 2px 0 var(--black);
-  background: var(--white);
-}
-.badge.live { background: var(--green); color: var(--white); }
-.badge.live::before { content: '● '; }
-
-/* ── Rangka Utama ─────────────────────────────────── */
-main {
-  display: grid;
-  grid-template-columns: 1fr 280px;
-  overflow: hidden;
-}
-
-/* ── Bahagian Kamera (Camera Section) ─────────────────────────────── */
-.cam-section {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 18px;
-  background: #1A1A1A;
-  border-right: var(--border);
-  position: relative;
-}
-
-.cam-wrapper {
-  position: relative;
-  border: var(--border);
-  box-shadow: var(--shadow-lg);
-  background: #000;
-  overflow: hidden;
-  width: 100%;
-  max-width: 900px;
-  aspect-ratio: 16 / 9;
-}
-
-#canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Lapisan Pemasa (Timer Overlay) */
-#timer-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-#timer-num {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(80px, 20vw, 180px);
-  color: #fff;
-  line-height: 1;
-  opacity: 0;
-  transform: scale(1.4);
-  transition: opacity 0.15s, transform 0.15s;
-  text-shadow: 4px 4px 0 var(--yellow), 8px 8px 0 rgba(0,0,0,0.3);
-  letter-spacing: -0.02em;
-}
-#timer-num.show { opacity: 1; transform: scale(1); }
-
-/* Lapisan Memuatkan (Loading Overlay) */
-#loading {
-  position: absolute;
-  inset: 0;
-  background: #0D0D0D;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  z-index: 20;
-}
-.spinner {
-  width: 28px; height: 28px;
-  border: 3px solid rgba(255,229,0,0.2);
-  border-top-color: var(--yellow);
-  border-radius: 50%;
-  animation: spin 0.75s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-#loading-msg {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(255,229,0,0.7);
-}
-
-/* Petunjuk Tangan (Hint Hands) */
-#hint {
-  position: absolute;
-  bottom: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 32px;
-  opacity: 0;
-  transition: opacity 0.5s;
-  pointer-events: none;
-}
-#hint.show { opacity: 1; }
-.hint-hand {
-  font-size: 40px;
-  animation: bob 1.8s ease-in-out infinite;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
-}
-.hint-hand:last-child { animation-delay: 0.4s; }
-@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-
-/* ── Panel Sisi (Side Panel) ──────────────────────────────────── */
-.panel {
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  background: var(--white);
-  padding: 14px;
-  gap: 12px;
-}
-
-.pcard {
-  border: var(--border);
-  box-shadow: var(--shadow);
-  background: var(--white);
-  padding: 12px;
-}
-.pcard-title {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: var(--black);
-  opacity: 0.45;
-  margin-bottom: 10px;
-}
-
-/* Grid Butang (Button Grids) */
-.filter-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-.f-btn, .t-btn, .c-btn {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 8px 4px;
-  border: 2px solid var(--black);
-  background: var(--gray);
-  cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
-  text-align: center;
-}
-.f-btn.active, .t-btn.active, .c-btn.active {
-  background: var(--yellow);
-  box-shadow: 2px 2px 0 var(--black);
-  transform: translate(-1px, -1px);
-}
-
-/* Paparan Mod Status */
-.mode-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 2px solid var(--black);
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  background: var(--gray);
-  box-shadow: 2px 2px 0 var(--black);
-  width: 100%;
-}
-.mode-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--gray);
-  border: 2px solid var(--black);
-  flex-shrink: 0;
-  transition: background 0.2s;
-}
-.mode-pill.idle .mode-dot    { background: var(--gray); }
-.mode-pill.framing .mode-dot { background: var(--blue); }
-.mode-pill.countdown .mode-dot { background: var(--red); animation: pulse-dot 0.5s ease infinite alternate; }
-.mode-pill.captured .mode-dot { background: var(--green); }
-@keyframes pulse-dot { to { transform: scale(1.5); } }
-#mode-text { flex: 1; }
-
-/* ── Bar Status Bawah (Status Bar) ──────────────────────────────────── */
-footer {
-  height: 38px;
-  display: flex;
-  align-items: center;
-  padding: 0 18px;
-  border-top: var(--border);
-  background: var(--yellow);
-  gap: 12px;
-  flex-shrink: 0;
-}
-#status-msg {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  flex: 1;
-}
-
-/* ── Skrin Hasil (Result Screen) ───────────────────────────────── */
-#result-screen {
-  position: fixed;
-  inset: 0;
-  background: var(--white);
-  display: none;
-  z-index: 30;
-  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-.result-inner {
-  display: grid;
-  grid-template-columns: 1fr 280px;
-  height: 100%;
-}
-
-.result-photo-area {
-  background: #111;
-  border-right: var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 28px;
-  overflow-y: auto;
-}
-
-#result-img {
-  max-width: 100%;
-  max-height: 90vh;
-  width: auto;
-  height: auto;
-  border: 1px solid rgba(0,0,0,0.1);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-  object-fit: contain;
-  background-color: var(--white);
-}
-
-.result-panel {
-  padding: 24px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  overflow-y: auto;
-}
-
-.result-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 36px;
-  letter-spacing: 0.04em;
-  line-height: 1;
-}
-.result-sub {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  opacity: 0.45;
-  text-transform: uppercase;
-  margin-top: 4px;
-}
-
-.result-meta {
-  border: var(--border);
-  box-shadow: var(--shadow);
-  padding: 12px;
-  background: var(--gray);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.meta-row { display: flex; justify-content: space-between; }
-.meta-row span:first-child { opacity: 0.45; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
-
-.btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
-
-.nbtn {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  padding: 14px 20px;
-  border: var(--border);
-  cursor: pointer;
-  background: var(--white);
-  box-shadow: var(--shadow);
-  transition: transform 0.08s, box-shadow 0.08s;
-  text-align: center;
-}
-.nbtn:hover  { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--black); }
-.nbtn:active { transform: translate(2px,2px);   box-shadow: 2px 2px 0 var(--black); }
-.nbtn.primary { background: var(--yellow); }
-
-/* Pelarasan Paparan Mudah Alih (Mobile View) */
-@media (max-width: 768px) {
-  main { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
-  .panel { flex-direction: row; flex-wrap: wrap; max-height: 250px; }
-  .pcard { flex: 1 1 calc(50% - 10px); }
-  .result-inner { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
-}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -407,14 +28,14 @@ footer {
         <canvas id="canvas"></canvas>
         <div id="timer-overlay"><div id="timer-num">3</div></div>
         <div id="hint"><div class="hint-hand">🤏</div><div class="hint-hand">🤏</div></div>
-        <div id="loading"><div class="spinner"></div><div id="loading-msg">Memuatkan model tangan…</div></div>
+        <div id="loading"><div class="spinner"></div><div id="loading-msg">Memuat model tangan…</div></div>
       </div>
     </div>
 
     <aside class="panel">
 
       <div class="pcard">
-        <div class="pcard-title">Status Mod</div>
+        <div class="pcard-title">Status Mode</div>
         <div class="mode-pill idle" id="mode-pill">
           <div class="mode-dot"></div>
           <div id="mode-text">IDLE</div>
@@ -431,7 +52,7 @@ footer {
       </div>
 
       <div class="pcard">
-        <div class="pcard-title">Penapis Foto</div>
+        <div class="pcard-title">Filter Foto</div>
         <div class="filter-row" style="grid-template-columns: 1fr 1fr 1fr;">
           <button class="f-btn active" data-f="none">Normal</button>
           <button class="f-btn" data-f="enhance">Enhance ✨</button>
@@ -460,9 +81,167 @@ footer {
   </main>
 
   <footer>
-    <div id="status-msg">Sila benarkan akses kamera untuk bermula</div>
+    <div id="status-msg">Izinkan akses kamera untuk memulai</div>
   </footer>
 
+</div>
+
+<!-- Layar Editor Strip Foto -->
+<div id="strip-editor">
+  <div class="se-inner">
+    <div class="se-header">
+      <div class="se-title">EDITOR JALUR FOTO</div>
+      <div class="se-subtitle">Seret foto untuk mengubah urutan · Pilih tema · Upload template</div>
+    </div>
+
+    <div class="se-body">
+      <!-- Area Foto -->
+      <div class="se-photos-section">
+        <div class="se-section-title">Foto Anda</div>
+        <div id="strip-photos" class="strip-photos-grid"></div>
+      </div>
+
+      <!-- Panel Pengaturan -->
+      <div class="se-settings">
+        <!-- Template Upload -->
+        <div class="se-card">
+          <div class="se-card-title">Template Latar Belakang</div>
+          <div class="template-options">
+            <button class="tpl-btn active" data-tpl="none">Tanpa Template</button>
+            <button class="tpl-btn" data-tpl="grid">Grid Klasik</button>
+            <button class="tpl-btn" data-tpl="film">Film Strip</button>
+            <button class="tpl-btn" data-tpl="scrapbook">Scrapbook</button>
+            <button class="tpl-btn" data-tpl="neon">Neon Frame</button>
+          </div>
+          <div class="upload-area" id="upload-area">
+            <input type="file" id="template-upload" accept="image/*" hidden>
+            <div class="upload-content" id="upload-content">
+              <div class="upload-icon">📁</div>
+              <div class="upload-text">Upload Template Sendiri</div>
+              <div class="upload-hint">Klik atau seret gambar ke sini</div>
+            </div>
+            <img id="template-preview" class="template-preview" alt="Pratinjau template" style="display:none;">
+            <button id="remove-template" class="remove-tpl-btn" style="display:none;">✕ Hapus Template</button>
+ <!-- Tombol Atur Zona (muncul jika ada template kustom) -->
+          <button id="btn-atur-zona" class="btn-zona" style="display:none;">📐 Atur Zona Foto pada Template</button>
+
+          <!-- Panduan Template -->
+          <div class="tpl-guide">
+            <div class="tpl-guide-toggle" id="tpl-guide-toggle">📖 Panduan & Ketentuan Template ▾</div>
+            <div class="tpl-guide-body" id="tpl-guide-body">
+              <div class="tpl-guide-item"><b>Format:</b> PNG atau JPG</div>
+              <div class="tpl-guide-item"><b>Rasio ideal:</b> Vertikal (3:4 atau 2:3) untuk tata letak vertikal, Horizontal (16:9 atau 4:3) untuk horizontal</div>
+              <div class="tpl-guide-item"><b>Resolusi minimum:</b> 600×800 px (disarankan 1080×1440 px atau lebih tinggi)</div>
+              <div class="tpl-guide-item"><b>Area kosong:</b> Sisakan area kosong/bersih pada template untuk tempat foto — tandai dengan fitur "Atur Zona Foto"</div>
+              <div class="tpl-guide-item"><b>Tips:</b> Template dengan dekorasi di pinggir dan area kosong di tengah akan memberikan hasil terbaik</div>
+              <div class="tpl-guide-item"><b>Zona Foto:</b> Setelah upload, klik "Atur Zona Foto" untuk menggambar kotak tempat foto akan ditampilkan</div>
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <!-- Pilih Tema -->
+        <div class="se-card">
+          <div class="se-card-title">Tema Jalur Foto</div>
+          <div class="filter-row" style="grid-template-columns: 1fr 1fr; margin-bottom: 6px;">
+            <button class="t-btn active" data-t="dark">Dark</button>
+            <button class="t-btn" data-t="pinky">Pinky</button>
+            <button class="t-btn" data-t="colorful">Colorful</button>
+            <button class="t-btn" data-t="vintage">Vintage</button>
+          </div>
+          <div class="filter-row" style="grid-template-columns: 1fr 1fr;">
+            <button class="t-btn" data-t="ai_magic">AI Magic</button>
+            <button class="t-btn" data-t="ai_cyber">AI Cyber</button>
+          </div>
+        </div>
+
+        <!-- Tata Letak -->
+        <div class="se-card">
+          <div class="se-card-title">Tata Letak Strip</div>
+          <div class="filter-row" style="grid-template-columns: 1fr 1fr 1fr;">
+            <button class="layout-btn active" data-layout="vertical">Vertikal</button>
+            <button class="layout-btn" data-layout="horizontal">Horizontal</button>
+            <button class="layout-btn" data-layout="grid">Grid 2x2</button>
+          </div>
+        </div>
+
+        <!-- Efek Fade Pinggir Foto -->
+        <div class="se-card">
+          <div class="se-card-title">Efek Fade Pinggir Foto</div>
+          <div class="fade-control">
+            <div class="fade-label">
+              <span>Intensitas Fade</span>
+              <span id="fade-value" class="fade-value">40px</span>
+            </div>
+            <input type="range" id="fade-slider" class="fade-slider" min="0" max="100" value="40" step="5">
+            <div class="fade-hint">Geser untuk mengatur seberapa halus pinggir foto menyatu dengan template</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tombol Aksi Bawah -->
+    <div class="se-footer">
+      <button class="nbtn" onclick="retakeFromEditor()">↩ Ambil Foto Ulang</button>
+      <button class="nbtn primary" onclick="generateFromEditor()">✨ Buat Jalur Foto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editor Zona Foto -->
+<div id="zone-editor-modal">
+  <div class="ze-inner">
+    <div class="ze-header">
+      <div class="ze-title">EDITOR ZONA FOTO</div>
+      <div class="ze-subtitle">Klik dan seret pada gambar untuk menggambar area foto · Setiap kotak = 1 foto</div>
+    </div>
+    <div class="ze-body">
+      <div class="ze-canvas-wrap" id="ze-canvas-wrap">
+        <canvas id="zone-canvas"></canvas>
+        <div id="zone-labels"></div>
+      </div>
+      <div class="ze-sidebar">
+        <div class="ze-info">
+          <div class="ze-info-title">Zona Terdefinisi</div>
+          <div id="zone-list" class="zone-list"></div>
+          <div id="zone-empty" class="zone-empty">Belum ada zona. Seret pada gambar untuk membuat zona foto.</div>
+        </div>
+        <div class="ze-actions">
+          <button class="nbtn" onclick="removeLastZone()">↩ Hapus Zona Terakhir</button>
+          <button class="nbtn" onclick="clearAllZones()">🗑 Hapus Semua Zona</button>
+        </div>
+
+        <!-- Duplikasi Grid Zona -->
+        <div class="ze-duplikasi">
+          <div class="ze-info-title">Duplikasi Grid Zona</div>
+          <div class="ze-duplikasi-desc">Gambar 1 zona dulu, lalu duplikasi otomatis ke bawah atau samping dengan jarak yang sama.</div>
+          <div class="ze-duplikasi-row">
+            <div class="ze-duplikasi-field">
+              <label>Jumlah</label>
+              <input type="number" id="dup-count" value="3" min="2" max="10" step="1">
+            </div>
+            <div class="ze-duplikasi-field">
+              <label>Jarak (px)</label>
+              <input type="number" id="dup-gap" value="30" min="0" max="500" step="5">
+            </div>
+          </div>
+          <div class="ze-duplikasi-btns">
+            <button class="nbtn ze-dup-btn" onclick="duplikasiZonaVertikal()">↓ Duplikasi ke Bawah</button>
+            <button class="nbtn ze-dup-btn" onclick="duplikasiZonaHorizontal()">→ Duplikasi ke Samping</button>
+          </div>
+          <div class="ze-duplikasi-hint">Zona terakhir akan diduplikasi sesuai jumlah dan jarak yang ditentukan.</div>
+        </div>
+
+        <div class="ze-hint">
+          <b>Tips:</b> Gambar kotak di area kosong template. Foto akan mengisi zona sesuai urutan pembuatan. Gunakan "Duplikasi Grid" agar semua zona seragam.
+        </div>
+      </div>
+    </div>
+    <div class="ze-footer">
+      <button class="nbtn" onclick="closeZoneEditor()">✕ Batal</button>
+      <button class="nbtn primary" onclick="saveZones()">✓ Simpan Zona & Terapkan</button>
+    </div>
+  </div>
 </div>
 
 <div id="result-screen">
@@ -472,8 +251,8 @@ footer {
     </div>
     <div class="result-panel">
       <div>
-        <div class="result-title">FOTO<br>BERJAYA!</div>
-        <div class="result-sub">Mod Jalur Foto · HandFrame</div>
+        <div class="result-title">FOTO<br>BERHASIL!</div>
+        <div class="result-sub">Mode Jalur Foto · HandFrame</div>
       </div>
       <div class="result-meta">
         <div class="meta-row"><span>Waktu Cetak</span><span id="meta-time">—</span></div>
@@ -481,7 +260,8 @@ footer {
       </div>
       <div class="btn-group">
         <button class="nbtn primary" onclick="downloadPhoto()">⬇ Simpan Foto</button>
-        <button class="nbtn" onclick="retake()">↩ Ambil Foto Semula</button>
+        <button class="nbtn" onclick="backToEditor()">✎ Edit Kembali</button>
+        <button class="nbtn" onclick="retake()">↩ Ambil Foto Ulang</button>
       </div>
     </div>
   </div>
@@ -490,668 +270,6 @@ footer {
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script>
-/* ── Elemen-elemen DOM ── */
-const video       = document.getElementById('video');
-const canvas      = document.getElementById('canvas');
-const ctx         = canvas.getContext('2d');
-
-canvas.width      = 1280;
-canvas.height     = 720;
-
-const timerNum    = document.getElementById('timer-num');
-const loadingEl   = document.getElementById('loading');
-const loadingMsg  = document.getElementById('loading-msg');
-const hintEl      = document.getElementById('hint');
-const statusMsg   = document.getElementById('status-msg');
-const resultScreen= document.getElementById('result-screen');
-const resultImg   = document.getElementById('result-img');
-const modePill    = document.getElementById('mode-pill');
-const modeText    = document.getElementById('mode-text');
-const metaTime    = document.getElementById('meta-time');
-const metaSize    = document.getElementById('meta-size');
-
-const filterBtns  = document.querySelectorAll('.f-btn');
-const themeBtns   = document.querySelectorAll('.t-btn');
-const countBtns   = document.querySelectorAll('.c-btn');
-
-/* ── Kanvas Tersembunyi (Offscreen Canvas) ── */
-const offscreenCanvas = document.createElement('canvas');
-offscreenCanvas.width = 1280; offscreenCanvas.height = 720;
-const offCtx = offscreenCanvas.getContext('2d');
-
-/* ── Status Aplikasi (State) ── */
-let state      = 'loading';
-let frame      = { x: 0.5, y: 0.5, size: 0.70 }; 
-let initDist   = null;
-let initSize   = 0.70;
-let cdVal      = 3;
-let cdInterval = null;
-let currentFilter = 'none';
-let currentTheme  = 'dark';
-
-/* ── Konfigurasi Jalur Foto (Photostrip Config) ── */
-let capturedPhotos = []; 
-let TOTAL_PHOTOS = 3; 
-const PINCH_THRESH = 0.072; 
-let photoDataUrl = '';
-
-const THEMES = {
-  dark:     { bg: '#0D0D0D', border: '#FFE500', text: '#FFE500', title: 'INFORMATICS', sub: 'UPN VETERAN JATIM', emotes: ['⚡', '✨', '💻', '👾'], tapeColor: 'rgba(255, 229, 0, 0.6)' },
-  pinky:    { bg: '#FFC0CB', border: '#FFFFFF', text: '#D81B60', title: 'SWEET MEMORIES', sub: 'PHOTOBOOTH', emotes: ['💖', '🎀', '🌸', '🍓'], tapeColor: 'rgba(255, 255, 255, 0.6)' },
-  colorful: { bg: '#4A90E2', border: '#FFFFFF', text: '#FFFFFF', title: 'GOOD VIBES', sub: 'STAY COLORFUL', emotes: ['🌈', '⭐', '🎈', '🎨'], tapeColor: 'rgba(255, 229, 0, 0.8)' },
-  vintage:  { bg: '#E6D5B8', border: '#4A3B32', text: '#4A3B32', title: 'RETRO STRIP', sub: 'CLASSIC CAPTURE', emotes: ['🕰️', '🎞️', '📻', '☕'], tapeColor: 'rgba(74, 59, 50, 0.4)' },
-  ai_magic: { bg: '#FFFFFF', border: '#FFFFFF', text: '#FFFFFF', title: 'AI MAGIC', sub: 'GENERATED AESTHETIC', emotes: ['✨', '🔮', '🌌', '🎨'], tapeColor: 'rgba(255, 255, 255, 0.4)', bgUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop' },
-  ai_cyber: { bg: '#000000', border: '#00FFCC', text: '#00FFCC', title: 'CYBER AI', sub: 'NEON DREAMS', emotes: ['🤖', '⚡', '🔋', '🧬'], tapeColor: 'rgba(0, 255, 204, 0.4)', bgUrl: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=800&auto=format&fit=crop' }
-};
-
-/* ── Pra-muat Gambar AI ── */
-const loadedImages = {};
-Object.keys(THEMES).forEach(key => {
-  if (THEMES[key].bgUrl) {
-    const img = new Image();
-    img.crossOrigin = "Anonymous"; // Supaya selamat dieksport ke kanvas
-    img.src = THEMES[key].bgUrl;
-    loadedImages[key] = img;
-  }
-});
-
-/* ── Pengendali Acara (Event Listeners) ── */
-filterBtns.forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    filterBtns.forEach(b => b.classList.remove('active'));
-    e.target.classList.add('active');
-    currentFilter = e.target.getAttribute('data-f');
-  });
-});
-
-themeBtns.forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    themeBtns.forEach(b => b.classList.remove('active'));
-    e.target.classList.add('active');
-    currentTheme = e.target.getAttribute('data-t');
-  });
-});
-
-countBtns.forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    countBtns.forEach(b => b.classList.remove('active'));
-    e.target.classList.add('active');
-    TOTAL_PHOTOS = parseInt(e.target.getAttribute('data-c'));
-    statusMsg.textContent = `Pilih jumlah foto: ${TOTAL_PHOTOS}. Pinch kedua tangan untuk membingkai.`;
-  });
-});
-
-/* ── Fungsi Pembantu (Helpers) ── */
-function dist2D(a, b) { return Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2); }
-function isPinching(lms) { return dist2D(lms[4], lms[8]) < PINCH_THRESH; }
-function pinchCenter(lms) { return { x: (lms[4].x + lms[8].x) / 2, y: (lms[4].y + lms[8].y) / 2 }; }
-
-/* Menggambar Gambar secara Proporsional (Anti-Stretch) */
-function drawCover(ctx, img, x, y, w, h) {
-  const imgRatio = img.width / img.height;
-  const canvasRatio = w / h;
-  let drawW, drawH, drawX, drawY;
-
-  if (imgRatio > canvasRatio) {
-    drawH = h;
-    drawW = img.width * (h / img.height);
-    drawX = x + (w - drawW) / 2;
-    drawY = y;
-  } else {
-    drawW = w;
-    drawH = img.height * (w / img.width);
-    drawX = x;
-    drawY = y + (h - drawH) / 2;
-  }
-  ctx.drawImage(img, drawX, drawY, drawW, drawH);
-}
-
-/* ── Penjejakan Wajah untuk Penapis (Face Tracking) ── */
-function getFaceCenters(faces, W, H) {
-  if (!faces || faces.length === 0) return [{ x: W * 0.5, y: H * 0.25, width: W * 0.15 }];
-  return faces.map(f => {
-    let cx = 0.5;
-    let cy = 0.25;
-    let fw = 0.15;
-    if (f.boundingBox) {
-      cx = 1 - f.boundingBox.xCenter; // Nyah-balik koordinat X (kerana kanvas dibalikkan)
-      // Dinaikkan ke 0.85 (daripada 0.6) supaya orbit berada tinggi di atas rambut
-      cy = f.boundingBox.yCenter - (f.boundingBox.height * 0.85); 
-      fw = f.boundingBox.width; // Ambil saiz lebar wajah
-    }
-    return { x: cx * W, y: cy * H, width: fw * W };
-  });
-}
-
-/* ── Penapis Animasi Mac Photo Booth (Mac Filters Overlay Graphics) ── */
-function drawHeart(ctx, x, y, size, angle, alpha, color) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(angle);
-  ctx.scale(size, size);
-  ctx.globalAlpha = alpha;
-  ctx.beginPath();
-  ctx.moveTo(0, -0.3);
-  ctx.bezierCurveTo(0.3, -0.8, 0.85, -0.45, 0.85, 0.1);
-  ctx.bezierCurveTo(0.85, 0.6, 0.35, 1.0, 0, 1.4);
-  ctx.bezierCurveTo(-0.35, 1.0, -0.85, 0.6, -0.85, 0.1);
-  ctx.bezierCurveTo(-0.85, -0.45, -0.3, -0.8, 0, -0.3);
-  ctx.fillStyle = color;
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius, angle, alpha) {
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(angle);
-  ctx.globalAlpha = alpha;
-  let rot = Math.PI / 2 * 3;
-  let x = 0;
-  let y = 0;
-  const step = Math.PI / spikes;
-
-  ctx.beginPath();
-  ctx.moveTo(0, -outerRadius);
-  for (let i = 0; i < spikes; i++) {
-    x = Math.cos(rot) * outerRadius;
-    y = Math.sin(rot) * outerRadius;
-    ctx.lineTo(x, y);
-    rot += step;
-
-    x = Math.cos(rot) * innerRadius;
-    y = Math.sin(rot) * innerRadius;
-    ctx.lineTo(x, y);
-    rot += step;
-  }
-  ctx.lineTo(0, -outerRadius);
-  ctx.closePath();
-  ctx.fillStyle = '#FFE500';
-  ctx.fill();
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-  ctx.restore();
-}
-
-function drawLovestruckOverlay(ctx, W, H, faces) {
-  const t = Date.now() / 1000;
-  const centers = getFaceCenters(faces, W, H);
-  
-  const colors = ['#FF2D55', '#FF3B30', '#FF85A2', '#FF2D55', '#FF85A2'];
-  const numHearts = 5;
-  const baselineWidth = W * 0.15; // Rujukan lebar muka jarak normal (15% dari skrin)
-  
-  centers.forEach(c => {
-    const faceScale = c.width / baselineWidth; // Faktor skala dinamik mengikut jarak muka
-
-    for (let i = 0; i < numHearts; i++) {
-      // Putaran Halo (Orbit)
-      const angle = -(t * 1.8) + (i * Math.PI * 2 / numHearts);
-      const cos = Math.cos(angle);
-      const sin = Math.sin(angle);
-      
-      // Kesan 3D (Besar di hadapan, kecil di belakang)
-      const scale = 1.0 + sin * 0.4; 
-      const alpha = 0.6 + (sin + 1) * 0.2; 
-      
-      // Radius elips untuk halo menyesuaikan jarak muka
-      const rx = 120 * faceScale; 
-      const ry = 35 * faceScale;  
-      
-      const x = c.x + cos * rx;
-      const y = c.y + sin * ry;
-      
-      // Denyutan jantung dan saiz ikon jantung menyesuaikan jarak muka
-      const baseScale = 22 * faceScale;
-      const beat = 1 + Math.sin(t * 6 + i) * 0.15; 
-      const heartAngle = Math.sin(t * 2 + i) * 0.2; 
-      
-      drawHeart(ctx, x, y, baseScale * scale * beat, heartAngle, alpha, colors[i]);
-    }
-  });
-}
-
-function drawDizzyOverlay(ctx, W, H, faces) {
-  const t = Date.now() / 1000;
-  const centers = getFaceCenters(faces, W, H);
-  const baselineWidth = W * 0.15; // Rujukan lebar muka jarak normal
-  
-  centers.forEach(c => {
-    const faceScale = c.width / baselineWidth; // Faktor skala dinamik
-
-    for (let i = 0; i < 4; i++) {
-      const angle = (t * 2.2) + (i * Math.PI * 2 / 4);
-      const cos = Math.cos(angle);
-      const sin = Math.sin(angle);
-      
-      // Saiz ikon menyesuaikan jarak muka
-      const scale = (1.0 + sin * 0.35) * faceScale; 
-      const alpha = 0.65 + (sin + 1) * 0.18; // Memudar ketika berada di belakang kepala
-      
-      // Radius elips orbit menyesuaikan jarak muka
-      const x = c.x + cos * (140 * faceScale);
-      const y = c.y + sin * (30 * faceScale); 
-      
-      if (i % 2 === 0) {
-        drawStar(ctx, x, y, 5, 16 * scale, 7 * scale, angle * 1.5, alpha);
-      } else {
-        ctx.save();
-        ctx.translate(x, y);
-        // Kita tidak mendarab 'scale' sekali lagi di sini kerana font-size akan mengekalkan nisbah
-        ctx.scale(scale, scale);
-        ctx.globalAlpha = alpha;
-        ctx.font = '32px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('🐦', 0, 0);
-        ctx.restore();
-      }
-    }
-  });
-}
-
-function setMode(m, label) {
-  modePill.className = 'mode-pill ' + m;
-  modeText.textContent = label;
-}
-
-function getFramePx() {
-  const W = canvas.width, H = canvas.height;
-  const fw = W * frame.size;
-  const fh = fw * 0.5625; // Nisbah 16:9
-  const fx = (1 - frame.x) * W - fw / 2;
-  const fy = frame.y * H - fh / 2;
-  return { fx, fy, fw, fh };
-}
-
-/* ── Melakar Bingkai Kamera (Drawing Frame) ── */
-function drawFrame(pulse) {
-  const { fx, fy, fw, fh } = getFramePx();
-  const W = canvas.width, H = canvas.height;
-
-  ctx.fillStyle = 'rgba(0,0,0,0.55)';
-  ctx.fillRect(0, 0, W, fy);
-  ctx.fillRect(0, fy+fh, W, H - fy - fh);
-  ctx.fillRect(0, fy, fx, fh);
-  ctx.fillRect(fx+fw, fy, W - fx - fw, fh);
-
-  const a = pulse ? (0.6 + 0.35*Math.sin(Date.now()/150)) : 1;
-  ctx.strokeStyle = `rgba(255,229,0,${a})`;
-  ctx.lineWidth = 3;
-  ctx.strokeRect(fx+1.5, fy+1.5, fw-3, fh-3);
-
-  const cl = Math.min(fw,fh) * 0.08;
-  ctx.strokeStyle = '#FFE500';
-  ctx.lineWidth = 5;
-  ctx.lineCap = 'square';
-  [
-    [fx, fy, cl, 0, 0, cl], [fx+fw, fy, -cl, 0, 0, cl],
-    [fx, fy+fh, cl, 0, 0, -cl], [fx+fw, fy+fh, -cl, 0, 0, -cl],
-  ].forEach(([ox,oy,hx,hy,vx,vy])=>{
-    ctx.beginPath(); ctx.moveTo(ox+hx, oy+hy); ctx.lineTo(ox, oy); ctx.lineTo(ox+vx, oy+vy); ctx.stroke();
-  });
-}
-
-function drawPinchDot(x, y, active) {
-  const sx = (1-x)*canvas.width, sy = y*canvas.height;
-  ctx.beginPath(); ctx.arc(sx, sy, 14, 0, Math.PI*2);
-  ctx.fillStyle = active ? 'rgba(255,229,0,0.2)' : 'rgba(255,255,255,0.1)'; ctx.fill();
-  ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI*2);
-  ctx.fillStyle = active ? '#FFE500' : 'rgba(255,255,255,0.5)'; ctx.fill();
-  ctx.strokeStyle = '#0D0D0D'; ctx.lineWidth = 2; ctx.stroke();
-}
-
-/* ── Aliran Tangkapan Foto (Capture Flow) ── */
-function startCountdown() {
-  if (state === 'countdown' || state === 'capturing') return;
-  state = 'countdown';
-  cdVal = 3;
-  timerNum.textContent = cdVal;
-  timerNum.classList.add('show');
-  setMode('countdown', `FOTO ${capturedPhotos.length + 1}/${TOTAL_PHOTOS}`);
-  statusMsg.textContent = `Sedia untuk foto ke-${capturedPhotos.length + 1}...`;
-
-  cdInterval = setInterval(()=>{
-    cdVal--;
-    if (cdVal > 0) {
-      timerNum.textContent = cdVal;
-    } else {
-      clearInterval(cdInterval); cdInterval = null;
-      timerNum.classList.remove('show');
-      takeSingleShot();
-    }
-  }, 1000);
-}
-
-function cancelSequence() {
-  if (cdInterval) { clearInterval(cdInterval); cdInterval = null; }
-  timerNum.classList.remove('show');
-  capturedPhotos = [];
-  state = 'framing';
-  setMode('framing','FRAMING');
-  statusMsg.textContent = 'Bingkai semula. Lepas pinch kedua tangan untuk mulakan timer…';
-}
-
-function takeSingleShot() {
-  state = 'capturing'; 
-  const { fx, fy, fw, fh } = getFramePx();
-  
-  const pc = document.createElement('canvas');
-  pc.width = Math.round(fw); pc.height = Math.round(fh);
-  
-  // Ambil gambar dari kanvas tersembunyi yang bersih (tanpa garis bingkai kuning/tangan)
-  pc.getContext('2d').drawImage(offscreenCanvas,
-    Math.round(fx), Math.round(fy), Math.round(fw), Math.round(fh),
-    0, 0, Math.round(fw), Math.round(fh)
-  );
-  capturedPhotos.push(pc);
-
-  const fl = document.createElement('div');
-  fl.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:99;pointer-events:none;transition:opacity 0.5s';
-  document.body.appendChild(fl);
-  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ fl.style.opacity='0'; setTimeout(()=>fl.remove(),550); }); });
-
-  if (capturedPhotos.length < TOTAL_PHOTOS) {
-    statusMsg.textContent = 'Menyediakan foto seterusnya...';
-    setTimeout(() => {
-      state = 'idle'; 
-      startCountdown();
-    }, 1000); 
-  } else {
-    generatePhotostrip();
-  }
-}
-
-/* ── Menjana Kanvas Hasil Akhir (Compile Photostrip Canvas) ── */
-function generatePhotostrip() {
-  state = 'captured';
-  
-  const tm = THEMES[currentTheme] || THEMES['dark']; // Fallback jika undefined
-  const aiImg = loadedImages[currentTheme];
-  const hasBgImage = !!(aiImg && aiImg.complete && aiImg.naturalWidth !== 0);
-  
-  const outW = 600;
-  const pad = 40;  
-  const gap = 30;  
-  
-  const sample = capturedPhotos[0];
-  const aspect = sample ? (sample.height / sample.width) : 0.5625;
-  const photoW = outW - (pad * 2);
-  const photoH = photoW * aspect;
-  
-  const headerH = 60;  
-  const footerH = 180; 
-  const outH = headerH + (photoH * TOTAL_PHOTOS) + (gap * (TOTAL_PHOTOS - 1)) + footerH + pad;
-
-  const sc = document.createElement('canvas');
-  sc.width = outW; sc.height = outH;
-  const sctx = sc.getContext('2d');
-
-  // Lapisan 1: Latar Belakang (Background)
-  if (hasBgImage) {
-    drawCover(sctx, aiImg, 0, 0, outW, outH);
-    // Beri sedikit overlay gelap agar foto & teks lebih menonjol
-    sctx.fillStyle = 'rgba(0,0,0,0.15)';
-    sctx.fillRect(0,0,outW,outH);
-  } else {
-    sctx.fillStyle = tm.bg;
-    sctx.fillRect(0, 0, outW, outH);
-  }
-
-  // Corak titik latar belakang jika bukan tema AI (untuk tema solid)
-  if (!hasBgImage) {
-    for (let j = 0; j < 30; j++) {
-      sctx.fillStyle = tm.text;
-      sctx.globalAlpha = 0.15;
-      sctx.beginPath();
-      sctx.arc(Math.random() * outW, Math.random() * outH, Math.random() * 3 + 1, 0, Math.PI * 2);
-      sctx.fill();
-    }
-    sctx.globalAlpha = 1.0;
-
-    sctx.strokeStyle = tm.text;
-    sctx.lineWidth = 4;
-    sctx.strokeRect(15, 15, outW - 30, outH - 30);
-  } else {
-    // Garis luar bingkai untuk tema AI
-    sctx.strokeStyle = 'rgba(255,255,255,0.4)';
-    sctx.lineWidth = 4;
-    sctx.strokeRect(15, 15, outW - 30, outH - 30);
-  }
-
-  // Lapisan 2: Menggambar Foto Hasil Kamera
-  let currY = headerH;
-  for(let i = 0; i < TOTAL_PHOTOS; i++) {
-    if (capturedPhotos[i]) {
-      
-      const bw = 12; 
-      sctx.fillStyle = hasBgImage ? '#FFFFFF' : tm.border; 
-      
-      // Kesan bayangan (shadow) estetika
-      if (hasBgImage) {
-        sctx.shadowColor = 'rgba(0,0,0,0.4)';
-        sctx.shadowBlur = 15;
-        sctx.shadowOffsetY = 6;
-      }
-      sctx.fillRect(pad - bw, currY - bw, photoW + bw*2, photoH + bw*2);
-      sctx.shadowColor = 'transparent'; // Reset semula bayangan
-      
-      // Melukis foto kamera
-      sctx.drawImage(capturedPhotos[i], pad, currY, photoW, photoH);
-
-      // Selotip Washi Tape
-      sctx.save();
-      sctx.translate(outW / 2, currY - bw + 4); 
-      sctx.rotate((Math.random() - 0.5) * 0.15); 
-      sctx.fillStyle = tm.tapeColor;
-      sctx.fillRect(-70, -12, 140, 24); 
-      sctx.restore();
-
-      // Stiker Emote
-      const emote = tm.emotes[i % tm.emotes.length];
-      sctx.save();
-      sctx.font = '45px Arial';
-      sctx.textAlign = 'center';
-      sctx.textBaseline = 'middle';
-      
-      if (i % 2 === 0) {
-        sctx.translate(pad + 10, currY + photoH - 10); 
-        sctx.rotate(-0.25);
-      } else {
-        sctx.translate(pad + photoW - 10, currY + photoH - 10); 
-        sctx.rotate(0.25);
-      }
-      
-      sctx.shadowColor = 'rgba(0,0,0,0.4)';
-      sctx.shadowBlur = 8;
-      sctx.shadowOffsetY = 4;
-      sctx.fillText(emote, 0, 0);
-      sctx.restore();
-    }
-    currY += photoH + gap;
-  }
-
-  // Lapisan 3: Menggambar Teks Laluan Bawah
-  currY -= gap; 
-  currY += (footerH / 2);
-
-  sctx.textAlign = 'center';
-  sctx.fillStyle = tm.text;
-  
-  sctx.font = 'bold 54px "Bebas Neue", sans-serif';
-  
-  // Tambah bayangan pada teks sekiranya background ialah imej AI
-  if(hasBgImage) {
-    sctx.shadowColor = 'rgba(0,0,0,0.6)';
-    sctx.shadowBlur = 4;
-    sctx.shadowOffsetY = 2;
-  }
-  
-  sctx.fillText(tm.title, outW/2, currY);
-  
-  sctx.font = 'bold 18px "Space Grotesk", sans-serif';
-  sctx.letterSpacing = "10px"; 
-  sctx.fillText(tm.sub, outW/2, currY + 40);
-
-  sctx.font = '500 13px "Space Grotesk", sans-serif';
-  sctx.letterSpacing = "4px";
-  const dateStr = new Date().toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'}).toUpperCase();
-  sctx.fillText(`• ${dateStr} •`, outW/2, currY + 85);
-  
-  sctx.shadowColor = 'transparent'; // Reset semula bayangan
-
-  // Hantar Hasil ke UI
-  photoDataUrl = sc.toDataURL('image/jpeg', 0.95);
-  metaTime.textContent = new Date().toLocaleTimeString('id-ID');
-  metaSize.textContent = outW + '×' + Math.floor(outH) + ' px';
-  resultImg.src = photoDataUrl;
-  setMode('captured','BERJAYA');
-  hintEl.classList.remove('show');
-  setTimeout(()=>{ resultScreen.style.display='block'; }, 200);
-}
-
-/* ── Butang Tindakan (Actions) ── */
-function retake() {
-  state   = 'idle';
-  frame   = { x:0.5, y:0.5, size:0.70 };
-  initDist = null;
-  capturedPhotos = [];
-  resultScreen.style.display = 'none';
-  if (cdInterval) { clearInterval(cdInterval); cdInterval = null; }
-  timerNum.classList.remove('show');
-  setMode('idle','IDLE');
-  statusMsg.textContent = 'Pinch kedua tangan untuk membingkai foto';
-  hintEl.classList.add('show');
-}
-
-function downloadPhoto() {
-  if (!photoDataUrl) return;
-  const a = document.createElement('a');
-  a.href = photoDataUrl;
-  a.download = `photostrip-${currentTheme}-${Date.now()}.jpg`;
-  a.click();
-}
-
-/* ── Keputusan Analisis MediaPipe Hands ── */
-function onResults(results) {
-  if (state === 'captured' || state === 'loading' || state === 'capturing') return;
-
-  const W = canvas.width, H = canvas.height;
-  ctx.save();
-  ctx.translate(W, 0); ctx.scale(-1, 1);
-  
-  // Mengintegrasikan sistem penapis kamera CSS
-  let cssFilter = 'none';
-  if (currentFilter === 'enhance') {
-    cssFilter = 'contrast(0.95) brightness(1.15) saturate(1.2)';
-  } else if (currentFilter === 'lovestruck' || currentFilter === 'dizzy') {
-    cssFilter = 'contrast(1.02) brightness(1.08) saturate(1.15)'; // Tone hangat lembut khas filter kecantikan
-  } else {
-    cssFilter = currentFilter;
-  }
-  
-  ctx.filter = cssFilter;
-  ctx.drawImage(results.image, 0, 0, W, H);
-  ctx.filter = 'none';
-  ctx.restore();
-
-  // Melukis penapis hiasan interaktif animasi Photo Booth
-  if (currentFilter === 'lovestruck') {
-    drawLovestruckOverlay(ctx, W, H, latestFaces);
-  } else if (currentFilter === 'dizzy') {
-    drawDizzyOverlay(ctx, W, H, latestFaces);
-  }
-
-  // SIMPAN kanvas bersih ke kanvas tersembunyi untuk ditangkap gambar kemudian
-  offCtx.clearRect(0, 0, W, H);
-  offCtx.drawImage(canvas, 0, 0, W, H);
-
-  const lms    = results.multiHandLandmarks ?? [];
-  const nHands = lms.length;
-
-  let pLeft = false, pRight = false;
-  let pc1 = null, pc2 = null;
-
-  if (nHands >= 1) { pLeft  = isPinching(lms[0]); pc1 = pinchCenter(lms[0]); }
-  if (nHands >= 2) { pRight = isPinching(lms[1]); pc2 = pinchCenter(lms[1]); }
-
-  const bothPinching = nHands === 2 && pLeft && pRight;
-
-  if (bothPinching) {
-    if (state === 'countdown') {
-       cancelSequence();
-    }
-    
-    hintEl.classList.remove('show');
-    state = 'framing';
-    const cx = (pc1.x + pc2.x) / 2, cy = (pc1.y + pc2.y) / 2;
-    const d  = dist2D(pc1, pc2);
-
-    if (!initDist) { initDist = d; initSize = frame.size; }
-    frame.size = Math.max(0.12, Math.min(1.0, initSize * (d / initDist)));
-    frame.x = cx; frame.y = cy;
-
-    drawFrame(false);
-    drawPinchDot(pc1.x, pc1.y, true); drawPinchDot(pc2.x, pc2.y, true);
-
-    ctx.beginPath(); ctx.moveTo((1-pc1.x)*W, pc1.y*H); ctx.lineTo((1-pc2.x)*W, pc2.y*H);
-    ctx.strokeStyle='rgba(255,229,0,0.35)'; ctx.lineWidth=1.5; ctx.setLineDash([5,9]); ctx.stroke(); ctx.setLineDash([]);
-
-    setMode('framing','FRAMING');
-    statusMsg.textContent = `Lepas pinch untuk mulai timer (${TOTAL_PHOTOS} Foto)...`;
-
-  } else if (state === 'framing') {
-    initDist = null;
-    drawFrame(false);
-    startCountdown();
-  } else if (state === 'countdown') {
-    drawFrame(true);
-    if (nHands >= 1 && pc1) drawPinchDot(pc1.x, pc1.y, pLeft);
-    if (nHands >= 2 && pc2) drawPinchDot(pc2.x, pc2.y, pRight);
-  } else {
-    setMode('idle','IDLE');
-    statusMsg.textContent = 'Pinch kedua tangan untuk mengatur bingkai';
-  }
-}
-
-/* ── Pemasangan MediaPipe Hands ── */
-const hands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
-hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.72, minTrackingConfidence: 0.55 });
-hands.onResults(onResults);
-
-/* ── Pemasangan MediaPipe Face Detection ── */
-let latestFaces = [];
-const faceDetection = new FaceDetection({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${f}` });
-faceDetection.setOptions({ model: 'short', minDetectionConfidence: 0.5 });
-faceDetection.onResults((results) => {
-  latestFaces = results.detections || [];
-});
-
-const camera = new Camera(video, {
-  onFrame: async () => { 
-    if (state !== 'captured') {
-      const p1 = hands.send({ image: video });
-      
-      // Penjejakan wajah hanya berjalan jika penapis memerlukannya (untuk menjimatkan prestasi & bateri)
-      const needsFace = (currentFilter === 'lovestruck' || currentFilter === 'dizzy');
-      const p2 = needsFace ? faceDetection.send({ image: video }) : Promise.resolve();
-      
-      await Promise.all([p1, p2]);
-    } 
-  },
-  width: 1280, height: 720,
-});
-
-camera.start().then(()=>{
-  state = 'idle'; loadingEl.style.display = 'none';
-  document.getElementById('live-badge').style.display = 'flex';
-  statusMsg.textContent = 'Pinch kedua tangan untuk membingkai foto';
-  hintEl.classList.add('show'); setMode('idle','IDLE'); 
-}).catch(err=>{
-  loadingMsg.textContent = 'Kamera ditolak — sila benarkan di pelayar web'; console.error(err);
-});
-</script>
+<script src="script.js"></script>
 </body>
 </html>
